@@ -6,7 +6,7 @@
 // =============================================================================
 //
 // Timing only (tb_matrix_unit checks the numbers). Ideal surroundings so that
-// every lost cycle belongs to the matrix unit or its frozen core:
+// every lost cycle belongs to the matrix unit or its systolic array:
 //   * vmem: grant every request, data one cycle later (no bank contention)
 //   * VECTOR side: m_ready held high
 //   * weights preloaded through the weight port before the commands

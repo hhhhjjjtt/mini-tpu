@@ -58,7 +58,7 @@ Run from this folder.
 ## Results (2026-11-05)
 
 - `test_c_replay`: 12 / 12 tests, 42,552 values bit-exact, for each of 3 seeds. The same count as the KV260. 364 descriptors re-encoded byte for byte.
-- `rtl_diff`: seeds 1 and 2, `systolic_streaming`, 154 programs: 0 of 1 MB DDR bytes differ, statuses and descriptor counts equal.
+- `rtl_diff`: seeds 1 and 2, 154 programs: 0 of 1 MB DDR bytes differ, statuses and descriptor counts equal.
 - `mutation_check`: all 15 injected bugs detected.
 - `bench_sim`, c_fc layer at S=256: 0.11 ms per descriptor, 0.22 ms with the race checker.
 

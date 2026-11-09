@@ -15,7 +15,6 @@
 //   other half through the LOAD_WGT port, and transposed (K^T); each is
 //   followed by GEMMs checked against the golden model.
 //
-// Run with either frozen core (see hw/rtl/files.mk).
 // =============================================================================
 
 module tb_matrix_unit;

@@ -5,7 +5,7 @@
 // =============================================================================
 //
 // INTERFACE_SPEC.md §10.1. vmem holds A row-major: one 128-bit word =
-// COLS = 16 consecutive k of one row. The frozen core wants column words: lane
+// COLS = 16 consecutive k of one row. The systolic array wants column words: lane
 // i = A[i, k], ROWS lanes. This block collects ROWS row words (one k-block) into
 // a bank, then emits COLS column words, one per cycle:
 //

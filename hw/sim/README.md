@@ -58,17 +58,17 @@ DMA bandwidth (P6): LOAD and STORE each 12.8 B/cycle, the full beat rate the DDR
 
 ## Matrix unit per-tile timing
 
-`make sim_matrix_timing` runs `tb_matrix_timing` (scenarios S1 one GEMM, S2 two back-to-back GEMMs, S3 short k) with ideal surroundings (vmem grants every request, data one cycle later; VECTOR always ready), so every lost cycle belongs to the matrix unit or its frozen core. It explains why `tput` on the KV260 reaches 80 % of peak while the matrix unit is busy.
+`make sim_matrix_timing` runs `tb_matrix_timing` (scenarios S1 one GEMM, S2 two back-to-back GEMMs, S3 short k) with ideal surroundings (vmem grants every request, data one cycle later; VECTOR always ready), so every lost cycle belongs to the matrix unit or its systolic array. It explains why `tput` on the KV260 reaches 80 % of peak while the matrix unit is busy.
 
 **Cycles:**
 
 | Where | Per M-tile, k = 512 | Per M-tile, k = 64 | Owner |
 |---|---|---|---|
 | Useful reads (one k-step per cycle) | 512 | 64 | — |
-| Read bubbles: core idles 1 cycle in `S_WAIT_TILE` before every 16-deep k-tile | 31 | 3 | frozen core |
-| Drain: `DRAIN_LEN` = (16 − 1) + (16 − 1) + 4 | 34 | 34 | frozen core |
-| Writeback of 16 result rows | 16 | 16 | frozen core |
-| Lead (start → first read), finish, handoff to the next tile | 5 | 5 | adapter + core |
+| Read bubbles: the array idles 1 cycle in `S_WAIT_TILE` before every 16-deep k-tile | 31 | 3 | `systolic_array.sv` |
+| Drain: `DRAIN_LEN` = (16 − 1) + (16 − 1) + 4 | 34 | 34 | `systolic_array.sv` |
+| Writeback of 16 result rows | 16 | 16 | `systolic_array.sv` |
+| Lead (start → first read), finish, handoff to the next tile | 5 | 5 | adapter + array |
 | **Tile total** | **597 (85.8 % useful)** | **121 (52.9 %)** | |
 | Per GEMM: first-tile fill (staging must hold all k words before the core starts) — **hidden for back-to-back GEMMs by cross-GEMM prefill** | 546 | 84 | adapter |
 | Per GEMM: tail (stream the last tile's 16 rows) | 17 | 17 | adapter |
@@ -81,7 +81,7 @@ What can be changed:
 
 | Loss | Share of `tput` overhead | Fix | Cost |
 |---|---|---|---|
-| Per-GEMM first-tile fill | ~27 % | **Done:** cross-GEMM prefill in `matrix_unit.sv` (next `GEMM` accepted early, its first tiles filled during the current GEMM's last tiles) | Adapter logic only; frozen core untouched |
-| Drain + writeback (50 / tile) | ~40 % | (a) two core instances alternating M-tiles, one draining while the other streams; (b) change the core to overlap drain with the next tile | (a) doubles matrix area (+256 DSP, ~6.5 k LUT); (b) breaks the frozen-core contract |
-| Read bubble every 16 k | ~24 % | Larger `K_TILE` (core parameter): 32 halves it | GEMM `k` must then be a multiple of `K_TILE` |
+| Per-GEMM first-tile fill | ~27 % | **Done:** cross-GEMM prefill in `matrix_unit.sv` (next `GEMM` accepted early, its first tiles filled during the current GEMM's last tiles) | Adapter logic only |
+| Drain + writeback (50 / tile) | ~40 % | (a) two arrays alternating M-tiles, one draining while the other streams; (b) change `systolic_array.sv` to overlap the drain with the next tile | (a) doubles matrix area (+256 DSP, ~6.5 k LUT); (b) RTL work in the array |
+| Read bubble every 16 k | ~24 % | Remove the idle cycle in `systolic_array.sv`, or a larger `K_TILE`: 32 halves it | GEMM `k` must then be a multiple of `K_TILE` |
 

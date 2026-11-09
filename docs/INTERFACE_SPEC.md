@@ -6,7 +6,7 @@ Status: **draft for review.** Normative interface contract between the compiler,
 2. Unit command words, incl. wait-condition encoding (§6)
 3. Register maps — ARM side and RISC-V side (§7–§8)
 4. Vector unit op set and requant parameter format (§5.4–§5.6, §9)
-5. Matrix unit adapter around the frozen GEMM core (§10)
+5. Matrix unit adapter around the systolic array (§10)
 6. Error codes (§11)
 
 Normative for **N = 16** and 16 vector lanes, the defaults.
@@ -687,9 +687,9 @@ Identity rescale: `zp = 0, multiplier = 1 << 30, shift = 30`.
 
 ---
 
-## 10. Matrix unit adapter (wraps the frozen GEMM core)
+## 10. Matrix unit adapter (wraps the systolic array)
 
-The frozen `compute_tile_bram` ([PLUGIN_CORE_CONTRACT.md](../../docs/PLUGIN_CORE_CONTRACT.md)) is reused **unchanged**. The adapter replaces the old DMA/ping-pong shell around it.
+The systolic array, [`systolic_array.sv`](../hw/rtl/matrix_unit/systolic_array.sv), is FlexNPU's `compute_tile_bram` (flavor `systolic_streaming`), renamed; it keeps that core's handshake. The adapter replaces the old DMA/ping-pong shell around it.
 
 ![Matrix unit adapter](matrix_adapter.svg)
 
@@ -718,7 +718,7 @@ The frozen `compute_tile_bram` ([PLUGIN_CORE_CONTRACT.md](../../docs/PLUGIN_CORE
 
 Instantiate the core with the production N = 16 shell values (`fpga/dma/top_axis_bram_16_pingpong.v`): `N = 16`, `K_TILE = 16`, `MAX_K = 1024`, **`ACT_FIFO_DEPTH = 16`**, `OUT_FIFO_DEPTH = 32`, `i_accumulate_in = 0`, `i_writeback_en = 1`.
 
-Implementation: [hw/rtl/matrix_unit/matrix_unit.sv](../hw/rtl/matrix_unit/matrix_unit.sv), verified by [hw/sim/tb/tb_matrix_unit.sv](../hw/sim/tb/tb_matrix_unit.sv) against the `systolic_streaming` core.
+Implementation: [hw/rtl/matrix_unit/matrix_unit.sv](../hw/rtl/matrix_unit/matrix_unit.sv), verified by [hw/sim/tb/tb_matrix_unit.sv](../hw/sim/tb/tb_matrix_unit.sv).
 
 ### 10.5 Sequencing per `GEMM` command
 
@@ -772,7 +772,7 @@ On any error: firmware stops issuing, records `ERR_*`, sets `STATUS = ERROR`, ra
 | I1 | **Row-major vmem + transposer in the matrix adapter**; weights pre-packed by compiler | Removes all host/DMA packing (largest host cost in CS1) |
 | I2 | **Relative wait distances** in descriptors, absolute targets in commands | Loop-invariant bodies; hardware compares absolute counts |
 | I3 | **24-bit done counters**, 16-word commands | 4 targets fit 3 words; 16.7 M commands/unit/program is ample |
-| I4 | **Frozen `compute_tile_bram` reused unchanged** behind an adapter | Keeps the plug-and-play core contract and all existing flavors |
+| I4 | FlexNPU's `compute_tile_bram` reused behind an adapter, now `systolic_array.sv` | Reused unchanged while several core flavors shared its contract; renamed and owned here since 2026-11-09 |
 | I5 | **K ≤ 512 per `GEMM`**; longer K via epilogue `STORE_I32` / `ACC_*` modes | Matches existing compiler K-split (512); bounded weight buffer |
 | I6 | I-mem **16 KB**, D-mem **8 KB** | Thin-router firmware is ≈ 1–4 KB code *(est.)* |
 | I7 | Params (requant tables etc.) live **in vmem**, loaded by `LOAD` | Fixed 64 B descriptors; params reused across M-tiles |

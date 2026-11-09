@@ -84,7 +84,7 @@ proc mini_tpu_mk_lists {path} {
 
 set mk [mini_tpu_mk_lists [file join $rtl_dir files.mk]]
 set srcs {}
-foreach v [list COMMON_SRCS CORE_SRCS UNIT_SRCS] {
+foreach v [list COMMON_SRCS UNIT_SRCS] {
     if {![dict exists $mk $v]} { error "mini_tpu: $v not found in files.mk" }
     foreach f [dict get $mk $v] { lappend srcs [file join $rtl_dir $f] }
 }
@@ -236,7 +236,6 @@ set fh [open [file join $out_dir build_info.txt] w]
 puts $fh "built:       [clock format [clock seconds] -format {%Y-%m-%d %H:%M:%S}]"
 puts $fh "vivado:      [version -short]"
 puts $fh "part:        $part_name ($board_part)"
-puts $fh "matrix core: systolic_streaming"
 puts $fh "ctrl window: $ctrl_base (64 KB, AXI-Lite on M_AXI_HPM0_FPD)"
 puts $fh "masters:     fetch, load, store -> S_AXI_HPC0_FPD"
 puts $fh "irq:         pl_ps_irq0\[0\]"

@@ -1,13 +1,17 @@
 `timescale 1ns/1ps
 
 // ============================================================
-// FlexNPU plug-and-play core — FLAVOR=systolic_streaming
+// systolic_array — the matrix unit's systolic array (instantiated only by
+// matrix_unit.sv). Originally FlexNPU's plug-and-play core compute_tile_bram,
+// flavor systolic_streaming; renamed and owned here since 2026-11-09. The
+// port names (act_addrb, act_doutb, ...) still follow that contract's
+// BRAM-style read ports, which the matrix unit's buffers implement.
 //
 // Streaming output-stationary systolic array. Wavefront kept
 // alive across intra-dispatch K-tile chunks; per-PE i32 accumulator
 // cleared once on `start` and drained once at S_WRITEBACK.
 //
-// Contract (docs/PLUGIN_CORE_CONTRACT.md):
+// Contract (FlexNPU docs/PLUGIN_CORE_CONTRACT.md, not in this repository):
 //   * tile_done_pulse fires exactly K_total/K_TILE times.
 //   * Wait for act_buf_ready && wgt_buf_ready before each K_TILE.
 //   * Writeback of the ARRAY_M x ARRAY_N i32 result happens ONCE.
@@ -35,7 +39,7 @@
 //   * Writeback iterates ARRAY_M rows.
 // ============================================================
 
-module compute_tile_bram #(
+module systolic_array #(
     parameter integer ACT_WIDTH             = 8,
     parameter integer ACC_WIDTH             = 32,
     parameter integer N                     = 8,

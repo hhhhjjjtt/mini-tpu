@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 
 // =============================================================================
-// matrix_unit — mini-tpu matrix unit (adapter + frozen compute_tile_bram)
+// matrix_unit — mini-tpu matrix unit (adapter around systolic_array.sv)
 // =============================================================================
 //
 // INTERFACE_SPEC.md §5.4 (GEMM), §5.4.1 (LOAD_WGT_VM) and §10 (adapter).
@@ -23,7 +23,7 @@
 // Three decoupled pipelines, each tile-ordered:
 //
 //   filler  : vmem row words -> act_transposer -> act staging half (t mod 2)
-//   core    : frozen compute_tile_bram reads staging half + weight half,
+//   core    : systolic_array reads staging half + weight half,
 //             writes T result rows into out buffer half (t mod 2)
 //   streamer: out buffer half (t mod 2) -> T x i32 stream (valid/ready/last)
 //
@@ -40,7 +40,7 @@
 // current GEMM's results (it waits on VECTOR) is not prefilled early.
 // LOAD_WGT_VM and bad commands are taken only when the unit is idle.
 //
-// The core is reused unchanged (docs/PLUGIN_CORE_CONTRACT.md). act/wgt
+// The array keeps FlexNPU's core handshake (see systolic_array.sv). act/wgt
 // buf_ready are held high while a resident half is in use (allowed by §5).
 //
 // LOAD_WGT_VM: fills a weight-buffer half from vmem (activation x activation
@@ -61,7 +61,7 @@ module matrix_unit #(
     parameter integer T        = (N < 16) ? 16 : N,    // tile width: derived, do not set
     parameter integer K_TILE   = 16,
     parameter integer K_MAX    = 512,     // per GEMM command (INTERFACE_SPEC I5)
-    parameter integer CORE_MAX_K = 1024,  // core parameter (frozen default)
+    parameter integer CORE_MAX_K = 1024,  // systolic_array MAX_K (its default)
     // Core FIFO sizing as driven by the production T=16 shell
     // (fpga/dma/top_axis_bram_16_pingpong.v).
     parameter integer ACT_FIFO_DEPTH = 16,
@@ -589,9 +589,9 @@ module matrix_unit #(
     );
 
     // ------------------------------------------------------------
-    // Frozen core
+    // Systolic array
     // ------------------------------------------------------------
-    compute_tile_bram #(
+    systolic_array #(
         .ACT_WIDTH (8),
         .ACC_WIDTH (32),
         .N              (N),

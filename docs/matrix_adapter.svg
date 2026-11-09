@@ -22,7 +22,7 @@
   </defs>
 
   <rect width="960" height="470" fill="#ffffff"/>
-  <text x="480" y="26" class="t" style="font-size:16px">Matrix unit adapter around the frozen compute_tile_bram</text>
+  <text x="480" y="26" class="t" style="font-size:16px">Matrix unit adapter around systolic_array</text>
 
   <!-- External blocks -->
   <rect x="30" y="80" width="150" height="64" rx="6" class="mem"/>
@@ -39,7 +39,7 @@
 
   <!-- Adapter container -->
   <rect x="210" y="50" width="560" height="380" rx="10" fill="#f8faf8" stroke="#188038" stroke-dasharray="6 4"/>
-  <text x="226" y="70" class="l" style="font-weight:600;fill:#188038">Matrix unit (adapter + frozen core)</text>
+  <text x="226" y="70" class="l" style="font-weight:600;fill:#188038">Matrix unit (adapter + systolic array)</text>
 
   <!-- Activation path -->
   <rect x="230" y="84" width="130" height="56" rx="5" class="cmp"/>
@@ -61,8 +61,8 @@
 
   <!-- Core -->
   <rect x="440" y="180" width="200" height="90" rx="6" class="core"/>
-  <text x="540" y="210" class="t">compute_tile_bram</text>
-  <text x="540" y="230" class="s">frozen contract · unchanged</text>
+  <text x="540" y="210" class="t">systolic_array</text>
+  <text x="540" y="230" class="s">16 × 16 PEs, output-stationary</text>
   <text x="540" y="250" class="s">16×16 i8×i8→i32</text>
 
   <!-- Output buffer -->
