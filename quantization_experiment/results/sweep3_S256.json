@@ -1,0 +1,138 @@
+{
+ "S": 256,
+ "results": [
+  {
+   "name": "fp32",
+   "ppl": 44.629484211044414,
+   "top1_agree": 1.0,
+   "kl": 0.0,
+   "tokens": 286365
+  },
+  {
+   "name": "final, P 255",
+   "ppl": 48.54396118996601,
+   "top1_agree": 0.7449024845913432,
+   "kl": 0.14186494545629116,
+   "tokens": 286365
+  },
+  {
+   "name": "final, P 127",
+   "ppl": 48.89806219305734,
+   "top1_agree": 0.74164091282105,
+   "kl": 0.14667266674660182,
+   "tokens": 286365
+  },
+  {
+   "name": "final except qkv",
+   "ppl": 48.410610935916374,
+   "top1_agree": 0.7469348558657657,
+   "kl": 0.1391849081089949,
+   "tokens": 286365
+  },
+  {
+   "name": "final except GELU input",
+   "ppl": 48.19154623504539,
+   "top1_agree": 0.7449583573411556,
+   "kl": 0.13987554789584397,
+   "tokens": 286365
+  },
+  {
+   "name": "final except act ln1",
+   "ppl": 47.38474370139605,
+   "top1_agree": 0.8093097969374748,
+   "kl": 0.07973673319305809,
+   "tokens": 286365
+  },
+  {
+   "name": "final except act ctx",
+   "ppl": 48.49267490238325,
+   "top1_agree": 0.7460269236813158,
+   "kl": 0.14032646553388964,
+   "tokens": 286365
+  },
+  {
+   "name": "final except act ln2",
+   "ppl": 48.167930688296146,
+   "top1_agree": 0.7491104010615822,
+   "kl": 0.1342812058037819,
+   "tokens": 286365
+  },
+  {
+   "name": "final except act gelu",
+   "ppl": 48.132201767403025,
+   "top1_agree": 0.7838283309762017,
+   "kl": 0.09671800290466515,
+   "tokens": 286365
+  },
+  {
+   "name": "final except act lnf",
+   "ppl": 48.281882129517285,
+   "top1_agree": 0.7487297679534859,
+   "kl": 0.1365800515957597,
+   "tokens": 286365
+  },
+  {
+   "name": "final except weights attn",
+   "ppl": 48.24143836567878,
+   "top1_agree": 0.7464075567894121,
+   "kl": 0.1390481872489324,
+   "tokens": 286365
+  },
+  {
+   "name": "final except weights proj",
+   "ppl": 48.53732727332718,
+   "top1_agree": 0.7453529586367049,
+   "kl": 0.14190394484624014,
+   "tokens": 286365
+  },
+  {
+   "name": "final except weights fc",
+   "ppl": 48.315562854898744,
+   "top1_agree": 0.747119934349519,
+   "kl": 0.13815467822084032,
+   "tokens": 286365
+  },
+  {
+   "name": "final except weights mlp",
+   "ppl": 48.52770075978017,
+   "top1_agree": 0.7442669320622283,
+   "kl": 0.14266385476115012,
+   "tokens": 286365
+  },
+  {
+   "name": "final except weights head",
+   "ppl": 47.310594938417054,
+   "top1_agree": 0.773481396120336,
+   "kl": 0.12339340680728669,
+   "tokens": 286365
+  },
+  {
+   "name": "final + SmoothQuant 0.5",
+   "ppl": 47.77434672814886,
+   "top1_agree": 0.8125783528014946,
+   "kl": 0.08587929437894526,
+   "tokens": 286365
+  },
+  {
+   "name": "final + SmoothQuant 0.75",
+   "ppl": 50.27964279481951,
+   "top1_agree": 0.7719588636879507,
+   "kl": 0.11422273537521226,
+   "tokens": 286365
+  }
+ ],
+ "samples": [
+  {
+   "fp32": "The history of the Roman Empire began when the Emperor Constantine, who had been a Roman citizen, was elected Emperor of the Roman Empire. He was succeeded by his son, Constantine II, who was elected Emperor of the Roman Empire.\n\n",
+   "final": "The history of the Roman Empire began when the emperor Claudius, the son of the emperor Claudius, was the son of the emperor Claudius, the son of the emperor Claudius, the son of the emperor Claudius, the son"
+  },
+  {
+   "fp32": "Scientists have recently discovered that the brain of a human with autism is more complex than previously thought.\n\nThe researchers, led by Dr. Michael J. Schoenfeld, a neuroscientist at the University of California,",
+   "final": "Scientists have recently discovered that the brain of a human can be used to create a new brain, which could lead to new treatments for diseases such as Alzheimer's, Parkinson's, and Parkinson's disease.\n\nThe discovery,"
+  },
+  {
+   "fp32": "The best way to learn programming is to learn how to use the language.\n\nThe best way to learn programming is to learn how to use the language. The best way to learn programming is to learn how to use the language.",
+   "final": "The best way to learn programming is to learn programming. Learn programming by learning programming. Learn programming by learning programming. Learn programming by learning programming. Learn programming by learning programming. Learn programming by learning programming. Learn programming by learning programming."
+  }
+ ]
+}

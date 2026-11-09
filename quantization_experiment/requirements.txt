@@ -1,0 +1,4 @@
+# install torch first:  pip install torch --index-url https://download.pytorch.org/whl/cu130
+transformers
+datasets
+numpy

@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="470" viewBox="0 0 960 470" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="ad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3c4043"/>
+    </marker>
+    <marker id="ac" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a56db"/>
+    </marker>
+    <style>
+      .t  { font-size: 14px; font-weight: 600; fill: #202124; text-anchor: middle; }
+      .s  { font-size: 12px; fill: #5f6368; text-anchor: middle; }
+      .l  { font-size: 11px; fill: #3c4043; }
+      .lc { font-size: 11px; fill: #1a56db; }
+      .data { stroke: #3c4043; stroke-width: 1.6; fill: none; }
+      .ctl  { stroke: #1a56db; stroke-width: 1.6; fill: none; stroke-dasharray: 5 3; }
+      .cbox { fill: #e8f0fe; stroke: #1a56db; }
+      .dma  { fill: #f3e8fd; stroke: #8430ce; }
+      .cmp  { fill: #e6f4ea; stroke: #188038; }
+      .mem  { fill: #fef7e0; stroke: #b06000; }
+      .core { fill: #ffffff; stroke: #188038; stroke-width: 2; }
+    </style>
+  </defs>
+
+  <rect width="960" height="470" fill="#ffffff"/>
+  <text x="480" y="26" class="t" style="font-size:16px">Matrix unit adapter around the frozen compute_tile_bram</text>
+
+  <!-- External blocks -->
+  <rect x="30" y="80" width="150" height="64" rx="6" class="mem"/>
+  <text x="105" y="107" class="t">vmem</text>
+  <text x="105" y="126" class="s">A row-major</text>
+
+  <rect x="30" y="290" width="150" height="64" rx="6" class="dma"/>
+  <text x="105" y="317" class="t">Load DMA</text>
+  <text x="105" y="336" class="s">LOAD_WGT</text>
+
+  <rect x="800" y="185" width="140" height="64" rx="6" class="cmp"/>
+  <text x="870" y="212" class="t">Vector unit</text>
+  <text x="870" y="231" class="s">VEC_EPILOGUE</text>
+
+  <!-- Adapter container -->
+  <rect x="210" y="50" width="560" height="380" rx="10" fill="#f8faf8" stroke="#188038" stroke-dasharray="6 4"/>
+  <text x="226" y="70" class="l" style="font-weight:600;fill:#188038">Matrix unit (adapter + frozen core)</text>
+
+  <!-- Activation path -->
+  <rect x="230" y="84" width="130" height="56" rx="5" class="cmp"/>
+  <text x="295" y="107" class="t" style="font-size:13px">Row reader</text>
+  <text x="295" y="125" class="s" style="font-size:11px">16 rows × k-block</text>
+
+  <rect x="380" y="84" width="130" height="56" rx="5" class="cmp"/>
+  <text x="445" y="107" class="t" style="font-size:13px">Transposer</text>
+  <text x="445" y="125" class="s" style="font-size:11px">16×16 bytes</text>
+
+  <rect x="530" y="84" width="140" height="56" rx="5" class="mem"/>
+  <text x="600" y="107" class="t" style="font-size:13px">Act staging ×2</text>
+  <text x="600" y="125" class="s" style="font-size:11px">2 × 8 KB BRAM</text>
+
+  <!-- Weight path -->
+  <rect x="230" y="294" width="160" height="56" rx="5" class="mem"/>
+  <text x="310" y="317" class="t" style="font-size:13px">Weight buffer ×2</text>
+  <text x="310" y="335" class="s" style="font-size:11px">2 × 8 KB BRAM</text>
+
+  <!-- Core -->
+  <rect x="440" y="180" width="200" height="90" rx="6" class="core"/>
+  <text x="540" y="210" class="t">compute_tile_bram</text>
+  <text x="540" y="230" class="s">frozen contract · unchanged</text>
+  <text x="540" y="250" class="s">16×16 i8×i8→i32</text>
+
+  <!-- Output buffer -->
+  <rect x="660" y="294" width="100" height="56" rx="5" class="mem"/>
+  <text x="710" y="317" class="t" style="font-size:13px">Out buffer</text>
+  <text x="710" y="335" class="s" style="font-size:11px">16 × 512 b</text>
+
+  <!-- Sequencer -->
+  <rect x="230" y="370" width="530" height="44" rx="5" class="cbox"/>
+  <text x="495" y="397" class="t" style="font-size:13px">Adapter sequencer — m_tiles loop · start/done · tile_done_pulse count · DONE[MATRIX]</text>
+
+  <!-- Data arrows -->
+  <line x1="180" y1="112" x2="228" y2="112" class="data" marker-end="url(#ad)"/>
+  <text x="204" y="104" class="l" text-anchor="middle">128b</text>
+  <line x1="360" y1="112" x2="378" y2="112" class="data" marker-end="url(#ad)"/>
+  <line x1="510" y1="112" x2="528" y2="112" class="data" marker-end="url(#ad)"/>
+  <path d="M600,140 V160 H500 V178" class="data" marker-end="url(#ad)"/>
+  <text x="508" y="172" class="l">act_doutb[k] (col k)</text>
+
+  <line x1="180" y1="322" x2="228" y2="322" class="data" marker-end="url(#ad)"/>
+  <path d="M310,294 V225 H438" class="data" marker-end="url(#ad)"/>
+  <text x="318" y="218" class="l">wgt_doutb[k]</text>
+
+  <path d="M600,270 V322 H658" class="data" marker-end="url(#ad)"/>
+  <text x="608" y="290" class="l">out port</text>
+  <path d="M760,322 H780 V217 H798" class="data" marker-end="url(#ad)" style="stroke-width:2.2"/>
+  <text x="786" y="270" class="l">512b stream</text>
+  <text x="786" y="284" class="l">valid/ready/last</text>
+
+  <!-- Control -->
+  <line x1="495" y1="370" x2="495" y2="272" class="ctl" marker-end="url(#ac)"/>
+  <text x="402" y="292" class="lc">start · K_total</text>
+  <text x="402" y="306" class="lc">bufs ready</text>
+  <rect x="800" y="370" width="140" height="44" rx="5" class="cbox"/>
+  <text x="870" y="389" class="t" style="font-size:12px">GEMM cmd FIFO</text>
+  <text x="870" y="405" class="s" style="font-size:11px">from controller</text>
+  <line x1="800" y1="392" x2="762" y2="392" class="ctl" marker-end="url(#ac)"/>
+</svg>

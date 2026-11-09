@@ -1,0 +1,13 @@
+ports match golden.py on 2454016 values
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights:   8%|▊         | 12/148 [00:00<00:01, 115.34it/s]Loading weights:  18%|█▊        | 27/148 [00:00<00:00, 130.47it/s]Loading weights: 100%|██████████| 148/148 [00:00<00:00, 677.36it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+S=256 P levels=127 float LN: ppl 50.99, top1 0.735, KL 0.1648 (164 s)
+S=256 P levels=127 integer LN: ppl 50.99, top1 0.736, KL 0.1647 (135 s)
+'The history of the Roman Empire began when the Emperor Constantine, the son of the Emperor Constantine, was elected Emperor of the Roman Empire. He was elected Emperor of the Roman Empire by the Emperor Constantine, the son of the Emperor Constantine, was'
+'Scientists have recently discovered that the brain of a young man is more likely to be damaged by the same type of injury as the brain of a young woman.\n\nThe findings, published in the journal Nature, suggest that the'
+"The best way to learn programming is to learn programming.\n\nI'm not sure if you can learn programming, but I can learn programming.\n\nI'm not sure if you can learn programming, but I can learn programming."
+S=1024 P levels=255 float LN: ppl 34.63, top1 0.744, KL 0.1725 (247 s)
+S=1024 P levels=255 integer LN: ppl 34.61, top1 0.744, KL 0.1723 (274 s)
+'The history of the Roman Empire began when the Emperor Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus'
+'Scientists have recently discovered that the bacteria that cause the bacteria to grow in the gut are actually the bacteria that cause the bacteria to grow in the gut.\n\n"We have discovered that the bacteria that cause the bacteria to grow'
+'The best way to learn programming is to learn programming. Learn programming is the best way to learn programming. Learn programming is the best way to learn programming.\n\nLearn programming is the best way to learn programming. Learn programming is the'

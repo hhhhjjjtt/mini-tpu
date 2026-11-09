@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="650" viewBox="0 0 960 650" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="ad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3c4043"/>
+    </marker>
+    <marker id="ac" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a56db"/>
+    </marker>
+    <style>
+      .t  { font-size: 14px; font-weight: 600; fill: #202124; text-anchor: middle; }
+      .s  { font-size: 12px; fill: #5f6368; text-anchor: middle; }
+      .l  { font-size: 11px; fill: #3c4043; }
+      .lc { font-size: 11px; fill: #1a56db; }
+      .data { stroke: #3c4043; stroke-width: 1.6; fill: none; }
+      .ctl  { stroke: #1a56db; stroke-width: 1.6; fill: none; stroke-dasharray: 5 3; }
+      .ps   { fill: #f1f3f4; stroke: #5f6368; }
+      .cbox { fill: #e8f0fe; stroke: #1a56db; }
+      .cin  { fill: #ffffff; stroke: #8ab4f8; }
+      .dma  { fill: #f3e8fd; stroke: #8430ce; }
+      .cmp  { fill: #e6f4ea; stroke: #188038; }
+      .mem  { fill: #fef7e0; stroke: #b06000; }
+    </style>
+  </defs>
+
+  <rect width="960" height="650" fill="#ffffff"/>
+  <text x="480" y="26" class="t" style="font-size:16px">FlexNPU — program-driven architecture (target)</text>
+
+  <!-- PS side -->
+  <rect x="40" y="44" width="280" height="64" rx="6" class="ps"/>
+  <text x="180" y="71" class="t">ARM Cortex-A53 ×4 (PS)</text>
+  <text x="180" y="91" class="s">IREE runtime · FlexNPU driver</text>
+
+  <rect x="640" y="44" width="280" height="64" rx="6" class="ps"/>
+  <text x="780" y="71" class="t">DDR4</text>
+  <text x="780" y="91" class="s">program · weights · activations · I/O</text>
+
+  <rect x="20" y="150" width="920" height="28" rx="4" class="ps"/>
+  <text x="480" y="169" class="s" style="fill:#3c4043">PS–PL AXI interconnect</text>
+
+  <line x1="180" y1="108" x2="180" y2="148" class="ctl" marker-end="url(#ac)"/>
+  <text x="188" y="133" class="lc">AXI-Lite (HPM): start · PROG_BASE · base regs</text>
+  <line x1="780" y1="110" x2="780" y2="148" class="data" marker-start="url(#ad)" marker-end="url(#ad)"/>
+  <text x="788" y="133" class="l">AXI HP</text>
+
+  <!-- PL container -->
+  <rect x="20" y="196" width="920" height="378" rx="10" fill="none" stroke="#9aa0a6" stroke-dasharray="6 4"/>
+  <text x="52" y="215" class="l" style="font-weight:600;fill:#5f6368">PL @ 100 MHz</text>
+
+  <!-- Controller -->
+  <rect x="60" y="226" width="840" height="88" rx="6" class="cbox"/>
+  <text x="480" y="245" class="t">Controller — RISC-V core, firmware interprets the descriptor program</text>
+  <rect x="76"  y="256" width="190" height="46" rx="4" class="cin"/>
+  <text x="171" y="275" class="t" style="font-size:12px">RISC-V core</text>
+  <text x="171" y="292" class="s" style="font-size:11px">PicoRV32 · RV32I</text>
+  <rect x="282" y="256" width="190" height="46" rx="4" class="cin"/>
+  <text x="377" y="275" class="t" style="font-size:12px">I-mem · D-mem</text>
+  <text x="377" y="292" class="s" style="font-size:11px">BRAM · firmware, state</text>
+  <rect x="488" y="256" width="190" height="46" rx="4" class="cin"/>
+  <text x="583" y="275" class="t" style="font-size:12px">Descriptor buffers ×2</text>
+  <text x="583" y="292" class="s" style="font-size:11px">filled by fetch DMA</text>
+  <rect x="694" y="256" width="190" height="46" rx="4" class="cin"/>
+  <text x="789" y="275" class="t" style="font-size:12px">Ports · mailbox</text>
+  <text x="789" y="292" class="s" style="font-size:11px">cmd · counters · IRQ · trace</text>
+
+  <line x1="300" y1="180" x2="300" y2="224" class="ctl" marker-end="url(#ac)"/>
+  <text x="308" y="207" class="lc">mailbox · firmware load</text>
+  <line x1="640" y1="180" x2="640" y2="224" class="data" marker-end="url(#ad)"/>
+  <text x="648" y="207" class="l">fetch DMA (burst program chunks)</text>
+
+  <!-- Command bus -->
+  <line x1="480" y1="314" x2="480" y2="344" class="ctl"/>
+  <line x1="150" y1="344" x2="810" y2="344" class="ctl"/>
+  <text x="260" y="338" class="lc" text-anchor="middle">cmd FIFOs (+waits) ▼   done counters ▲</text>
+  <line x1="150" y1="346" x2="150" y2="370" class="ctl" marker-start="url(#ac)" marker-end="url(#ac)"/>
+  <line x1="370" y1="346" x2="370" y2="370" class="ctl" marker-start="url(#ac)" marker-end="url(#ac)"/>
+  <line x1="590" y1="346" x2="590" y2="370" class="ctl" marker-start="url(#ac)" marker-end="url(#ac)"/>
+  <line x1="810" y1="346" x2="810" y2="370" class="ctl" marker-start="url(#ac)" marker-end="url(#ac)"/>
+
+  <!-- Units -->
+  <rect x="60"  y="372" width="180" height="72" rx="6" class="dma"/>
+  <text x="150" y="403" class="t">Load DMA</text>
+  <text x="150" y="423" class="s">strided · 2D gather</text>
+
+  <rect x="280" y="372" width="180" height="72" rx="6" class="cmp"/>
+  <text x="370" y="403" class="t">Matrix unit</text>
+  <text x="370" y="423" class="s">wgt buffer ×2 · N×N i8×i8→i32</text>
+
+  <rect x="500" y="372" width="180" height="72" rx="6" class="cmp"/>
+  <text x="590" y="403" class="t">Vector unit</text>
+  <text x="590" y="423" class="s">requant · eltwise · softmax</text>
+
+  <rect x="720" y="372" width="180" height="72" rx="6" class="dma"/>
+  <text x="810" y="403" class="t">Store DMA</text>
+  <text x="810" y="423" class="s">strided scatter</text>
+
+  <line x1="460" y1="408" x2="498" y2="408" class="data" marker-end="url(#ad)" style="stroke-width:2.2"/>
+  <text x="478" y="398" class="l" text-anchor="middle">512b</text>
+  <line x1="240" y1="408" x2="278" y2="408" class="data" marker-end="url(#ad)"/>
+  <text x="259" y="398" class="l" text-anchor="middle">wgt</text>
+
+  <!-- vmem -->
+  <rect x="60" y="488" width="840" height="64" rx="6" class="mem"/>
+  <text x="480" y="515" class="t">vmem</text>
+  <text x="480" y="535" class="s">64 URAM · 8 banks × 256 KB × 128-bit (2 MB) · one layer's activations</text>
+
+  <line x1="150" y1="446" x2="150" y2="486" class="data" marker-end="url(#ad)"/>
+  <line x1="370" y1="486" x2="370" y2="446" class="data" marker-end="url(#ad)"/>
+  <text x="378" y="470" class="l">act (read-only)</text>
+  <line x1="590" y1="446" x2="590" y2="486" class="data" marker-start="url(#ad)" marker-end="url(#ad)"/>
+  <line x1="810" y1="486" x2="810" y2="446" class="data" marker-end="url(#ad)"/>
+
+  <!-- DMA <-> DDR via AXI HP -->
+  <path d="M40,180 V408 H58" class="data" marker-end="url(#ad)"/>
+  <text transform="rotate(-90 33 300)" x="33" y="300" class="l" text-anchor="middle">AXI HP read</text>
+  <path d="M902,408 H920 V182" class="data" marker-end="url(#ad)"/>
+  <text transform="rotate(90 929 300)" x="929" y="300" class="l" text-anchor="middle">AXI HP write</text>
+
+  <!-- Legend -->
+  <line x1="300" y1="610" x2="340" y2="610" class="data"/>
+  <text x="348" y="614" class="l">data</text>
+  <line x1="420" y1="610" x2="460" y2="610" class="ctl"/>
+  <text x="468" y="614" class="lc">control / commands</text>
+  <rect x="610" y="602" width="16" height="16" rx="3" class="cmp"/>
+  <text x="632" y="614" class="l">compute</text>
+  <rect x="700" y="602" width="16" height="16" rx="3" class="dma"/>
+  <text x="722" y="614" class="l">DMA</text>
+  <rect x="770" y="602" width="16" height="16" rx="3" class="mem"/>
+  <text x="792" y="614" class="l">memory</text>
+</svg>

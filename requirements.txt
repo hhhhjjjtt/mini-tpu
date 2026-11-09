@@ -1,0 +1,8 @@
+# Workstation Python (3.11 or newer) for make: compiler, simulator, calibration, make model, tests.
+# The quantization study needs more: quantization_experiment/requirements.txt.
+numpy
+tokenizers
+huggingface_hub
+datasets
+regex
+transformers        # only for sw/compiler/tests/run_gpt2.py --prompt

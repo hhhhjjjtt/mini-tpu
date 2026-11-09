@@ -1,0 +1,60 @@
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights:  18%|█▊        | 27/148 [00:00<00:00, 256.30it/s]Loading weights:  36%|███▌      | 53/148 [00:00<00:00, 250.56it/s]Loading weights: 100%|██████████| 148/148 [00:00<00:00, 692.10it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+
+=== S=256
+config                                   ppl    d ppl    top1       KL
+fp32                                   44.63    +0.00   1.000   0.0000
+final, P 255                           48.54    +3.91   0.745   0.1419
+final, P 127                           48.90    +4.27   0.742   0.1467
+final except qkv                       48.41    +3.78   0.747   0.1392
+final except GELU input                48.19    +3.56   0.745   0.1399
+final except act ln1                   47.38    +2.76   0.809   0.0797
+final except act ctx                   48.49    +3.86   0.746   0.1403
+final except act ln2                   48.17    +3.54   0.749   0.1343
+final except act gelu                  48.13    +3.50   0.784   0.0967
+final except act lnf                   48.28    +3.65   0.749   0.1366
+final except weights attn              48.24    +3.61   0.746   0.1390
+final except weights proj              48.54    +3.91   0.745   0.1419
+final except weights fc                48.32    +3.69   0.747   0.1382
+final except weights mlp               48.53    +3.90   0.744   0.1427
+final except weights head              47.31    +2.68   0.773   0.1234
+final + SmoothQuant 0.5                47.77    +3.14   0.813   0.0859
+final + SmoothQuant 0.75               50.28    +5.65   0.772   0.1142
+
+[fp32 ] 'The history of the Roman Empire began when the Emperor Constantine, who had been a Roman citizen, was elected Emperor of the Roman Empire. He was succeeded by his son, Constantine II, who was elected Emperor of the Roman Empire.\n\n'
+[final] 'The history of the Roman Empire began when the emperor Claudius, the son of the emperor Claudius, was the son of the emperor Claudius, the son of the emperor Claudius, the son of the emperor Claudius, the son'
+
+[fp32 ] 'Scientists have recently discovered that the brain of a human with autism is more complex than previously thought.\n\nThe researchers, led by Dr. Michael J. Schoenfeld, a neuroscientist at the University of California,'
+[final] "Scientists have recently discovered that the brain of a human can be used to create a new brain, which could lead to new treatments for diseases such as Alzheimer's, Parkinson's, and Parkinson's disease.\n\nThe discovery,"
+
+[fp32 ] 'The best way to learn programming is to learn how to use the language.\n\nThe best way to learn programming is to learn how to use the language. The best way to learn programming is to learn how to use the language.'
+[final] 'The best way to learn programming is to learn programming. Learn programming by learning programming. Learn programming by learning programming. Learn programming by learning programming. Learn programming by learning programming. Learn programming by learning programming. Learn programming by learning programming.'
+
+=== S=1024
+config                                   ppl    d ppl    top1       KL
+fp32                                   29.95    +0.00   1.000   0.0000
+final, P 255                           34.76    +4.81   0.743   0.1723
+final, P 127                           38.29    +8.34   0.707   0.2526
+final except qkv                       34.66    +4.71   0.745   0.1692
+final except GELU input                34.22    +4.27   0.753   0.1557
+final except act ln1                   33.17    +3.22   0.804   0.0993
+final except act ctx                   34.74    +4.79   0.744   0.1709
+final except act ln2                   34.43    +4.48   0.744   0.1686
+final except act gelu                  33.23    +3.28   0.787   0.1084
+final except act lnf                   34.60    +4.65   0.747   0.1672
+final except weights attn              34.65    +4.69   0.743   0.1716
+final except weights proj              34.76    +4.81   0.743   0.1722
+final except weights fc                34.60    +4.65   0.746   0.1678
+final except weights mlp               34.75    +4.80   0.743   0.1719
+final except weights head              33.75    +3.80   0.768   0.1491
+final + SmoothQuant 0.5                34.73    +4.78   0.782   0.1445
+final + SmoothQuant 0.75               33.68    +3.73   0.782   0.1208
+
+[fp32 ] 'The history of the Roman Empire began when the Emperor Constantine, who had been a Roman citizen, was elected Emperor of the Roman Empire. He was succeeded by his son, Constantine II, who was elected Emperor of the Roman Empire.\n\n'
+[final] 'The history of the Roman Empire began when the Emperor Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus'
+
+[fp32 ] 'Scientists have recently discovered that the brain of a human with autism is more complex than previously thought.\n\nThe researchers, led by Dr. Michael J. Schoenfeld, a neuroscientist at the University of California,'
+[final] 'Scientists have recently discovered that the brain of a young child is more likely to be affected by autism than the brain of a young child.\n\nThe findings, published in the journal Nature, suggest that the brain of a young'
+
+[fp32 ] 'The best way to learn programming is to learn how to use the language.\n\nThe best way to learn programming is to learn how to use the language. The best way to learn programming is to learn how to use the language.'
+[final] 'The best way to learn programming is to learn programming. Learn programming. Learn programming. Learn programming. Learn programming. Learn programming. Learn programming. Learn programming. Learn programming. Learn programming. Learn programming. Learn programming. Learn programming.'

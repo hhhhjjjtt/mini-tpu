@@ -1,0 +1,21 @@
+{
+ "S": 1024,
+ "levels": 255,
+ "float LN": {
+  "ppl": 34.627818652134366,
+  "top1_agree": 0.7441767909509845,
+  "kl": 0.17252017445877899,
+  "tokens": 286440
+ },
+ "integer LN": {
+  "ppl": 34.60900811406284,
+  "top1_agree": 0.7440999860354699,
+  "kl": 0.17229847220165273,
+  "tokens": 286440
+ },
+ "samples": [
+  "The history of the Roman Empire began when the Emperor Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus",
+  "Scientists have recently discovered that the bacteria that cause the bacteria to grow in the gut are actually the bacteria that cause the bacteria to grow in the gut.\n\n\"We have discovered that the bacteria that cause the bacteria to grow",
+  "The best way to learn programming is to learn programming. Learn programming is the best way to learn programming. Learn programming is the best way to learn programming.\n\nLearn programming is the best way to learn programming. Learn programming is the"
+ ]
+}

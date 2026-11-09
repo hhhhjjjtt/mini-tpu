@@ -1,0 +1,21 @@
+{
+ "S": 256,
+ "levels": 127,
+ "float LN": {
+  "ppl": 50.98530885081198,
+  "top1_agree": 0.7350269760620187,
+  "kl": 0.16475322986413823,
+  "tokens": 286365
+ },
+ "integer LN": {
+  "ppl": 50.99176514713109,
+  "top1_agree": 0.7362177640423935,
+  "kl": 0.16471155407837823,
+  "tokens": 286365
+ },
+ "samples": [
+  "The history of the Roman Empire began when the Emperor Constantine, the son of the Emperor Constantine, was elected Emperor of the Roman Empire. He was elected Emperor of the Roman Empire by the Emperor Constantine, the son of the Emperor Constantine, was",
+  "Scientists have recently discovered that the brain of a young man is more likely to be damaged by the same type of injury as the brain of a young woman.\n\nThe findings, published in the journal Nature, suggest that the",
+  "The best way to learn programming is to learn programming.\n\nI'm not sure if you can learn programming, but I can learn programming.\n\nI'm not sure if you can learn programming, but I can learn programming."
+ ]
+}

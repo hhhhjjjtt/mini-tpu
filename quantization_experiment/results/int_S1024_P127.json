@@ -1,0 +1,13 @@
+{
+ "S": 1024,
+ "levels": 127,
+ "ppl": 38.272310969006014,
+ "top1_agree": 0.7065563468789275,
+ "kl": 0.2554811108230529,
+ "tokens": 286440,
+ "samples": [
+  "The history of the Roman Empire began when the Emperor Constantine the Great, the son of the Emperor Constantine the Great, was the son of the Emperor Constantine the Great, the son of the Emperor Constantine the Great, the son of the Emperor Constantine",
+  "Scientists have recently discovered that the brain of a human is much more complex than previously thought.\n\nThe researchers, led by Dr. Dr. Dr. Dr. Dr. Dr. Dr. Dr. Dr. Dr.",
+  "The best way to learn programming is to learn programming. Learn programming is the best way to learn programming.\n\nLearning programming is the best way to learn programming.\n\nLearning programming is the best way to learn programming.\n\n"
+ ]
+}

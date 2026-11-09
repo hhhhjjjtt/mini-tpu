@@ -1,0 +1,19 @@
+# mini-tpu build configuration: the only file to edit. See docs/BUILD.md.
+
+[hardware]
+name         = "kv260_n16"
+array_n      = 16       # matrix unit width: 8, 16, 32 or 64
+vector_lanes = 16       # vector unit width: 4, 8, 16, 32 or 64
+vmem_kb      = 2048     # power of two, 256 ... 2048 (all URAM on xck26)
+max_k        = 512      # GEMM K per command, power of two, 16 ... 1024
+max_len      = 1024     # longest softmax / LayerNorm row, multiple of 16 and vector_lanes, <= 1024
+fifo_depth   = 8        # unit command FIFOs
+
+[model]
+name  = "gpt2"
+path  = "sw/compiler/model/gpt2"            # Hugging Face files (make model)
+calib = "sw/compiler/model/calib.txt"       # calibration text (make model)
+
+[build]
+seq          = 128      # tokens per program
+calib_tokens = 16384

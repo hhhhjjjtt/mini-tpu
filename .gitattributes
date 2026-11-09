@@ -1,0 +1,11 @@
+# Sources are LF in the repository and on checkout, so the KV260 and the workstation see the same bytes.
+* text=auto eol=lf
+
+*.bat  text eol=crlf
+*.ps1  text eol=crlf
+
+*.bin  binary
+*.bit  binary
+*.npz  binary
+*.safetensors binary
+*.png  binary

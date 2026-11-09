@@ -1,0 +1,138 @@
+{
+ "S": 1024,
+ "results": [
+  {
+   "name": "fp32",
+   "ppl": 29.951052807195225,
+   "top1_agree": 1.0,
+   "kl": 0.0,
+   "tokens": 286440
+  },
+  {
+   "name": "final, P 255",
+   "ppl": 34.75918480887502,
+   "top1_agree": 0.743251640832286,
+   "kl": 0.17228240157085964,
+   "tokens": 286440
+  },
+  {
+   "name": "final, P 127",
+   "ppl": 38.29444753048454,
+   "top1_agree": 0.7069229157938836,
+   "kl": 0.25255022180794573,
+   "tokens": 286440
+  },
+  {
+   "name": "final except qkv",
+   "ppl": 34.663591398534614,
+   "top1_agree": 0.7453079178885631,
+   "kl": 0.16917292862993233,
+   "tokens": 286440
+  },
+  {
+   "name": "final except GELU input",
+   "ppl": 34.21851749673202,
+   "top1_agree": 0.753379416282642,
+   "kl": 0.1557376571248287,
+   "tokens": 286440
+  },
+  {
+   "name": "final except act ln1",
+   "ppl": 33.17010300678491,
+   "top1_agree": 0.8040706605222734,
+   "kl": 0.09932871524090042,
+   "tokens": 286440
+  },
+  {
+   "name": "final except act ctx",
+   "ppl": 34.737970925820576,
+   "top1_agree": 0.7441593352883675,
+   "kl": 0.17093096603779231,
+   "tokens": 286440
+  },
+  {
+   "name": "final except act ln2",
+   "ppl": 34.43275730323765,
+   "top1_agree": 0.7441767909509845,
+   "kl": 0.1685705611366514,
+   "tokens": 286440
+  },
+  {
+   "name": "final except act gelu",
+   "ppl": 33.234955468205904,
+   "top1_agree": 0.7865486663873761,
+   "kl": 0.1084082627026766,
+   "tokens": 286440
+  },
+  {
+   "name": "final except act lnf",
+   "ppl": 34.59653993675302,
+   "top1_agree": 0.7465018852115626,
+   "kl": 0.1672336261409935,
+   "tokens": 286440
+  },
+  {
+   "name": "final except weights attn",
+   "ppl": 34.64555354374289,
+   "top1_agree": 0.742724479821254,
+   "kl": 0.1715560223766253,
+   "tokens": 286440
+  },
+  {
+   "name": "final except weights proj",
+   "ppl": 34.76381806300542,
+   "top1_agree": 0.7430596285434995,
+   "kl": 0.1722388022606174,
+   "tokens": 286440
+  },
+  {
+   "name": "final except weights fc",
+   "ppl": 34.597031203234636,
+   "top1_agree": 0.7458001675743611,
+   "kl": 0.16782884250188604,
+   "tokens": 286440
+  },
+  {
+   "name": "final except weights mlp",
+   "ppl": 34.74850792175332,
+   "top1_agree": 0.7432027649769585,
+   "kl": 0.17193513765562815,
+   "tokens": 286440
+  },
+  {
+   "name": "final except weights head",
+   "ppl": 33.747564264950014,
+   "top1_agree": 0.7675219941348974,
+   "kl": 0.1490674701653917,
+   "tokens": 286440
+  },
+  {
+   "name": "final + SmoothQuant 0.5",
+   "ppl": 34.72703517106286,
+   "top1_agree": 0.7823453428292138,
+   "kl": 0.14449292307974756,
+   "tokens": 286440
+  },
+  {
+   "name": "final + SmoothQuant 0.75",
+   "ppl": 33.67814144293797,
+   "top1_agree": 0.7820136852394917,
+   "kl": 0.12084411159771612,
+   "tokens": 286440
+  }
+ ],
+ "samples": [
+  {
+   "fp32": "The history of the Roman Empire began when the Emperor Constantine, who had been a Roman citizen, was elected Emperor of the Roman Empire. He was succeeded by his son, Constantine II, who was elected Emperor of the Roman Empire.\n\n",
+   "final": "The history of the Roman Empire began when the Emperor Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus Augustus"
+  },
+  {
+   "fp32": "Scientists have recently discovered that the brain of a human with autism is more complex than previously thought.\n\nThe researchers, led by Dr. Michael J. Schoenfeld, a neuroscientist at the University of California,",
+   "final": "Scientists have recently discovered that the brain of a young child is more likely to be affected by autism than the brain of a young child.\n\nThe findings, published in the journal Nature, suggest that the brain of a young"
+  },
+  {
+   "fp32": "The best way to learn programming is to learn how to use the language.\n\nThe best way to learn programming is to learn how to use the language. The best way to learn programming is to learn how to use the language.",
+   "final": "The best way to learn programming is to learn programming. Learn programming. Learn programming. Learn programming. Learn programming. Learn programming. Learn programming. Learn programming. Learn programming. Learn programming. Learn programming. Learn programming. Learn programming."
+  }
+ ]
+}
