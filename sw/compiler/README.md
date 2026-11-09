@@ -53,6 +53,7 @@ Run from this folder.
 | `PYTHONPATH=. python -m unittest tests.test_tiny_gpt` | 1 s | Small random GPTs, compiled: bit-exact against the reference, race-free, any execution order |
 | `python tests/rtl_gpt.py` | 5 min | The tiny GPT on the RTL: all of DDR against the simulator, logits against the reference |
 | `python tests/rtl_decode.py` | 10 min | The tiny GPT decoding on the RTL: 2 prefills and 5 decode steps across 3 buckets; all of DDR against the simulator, logits against the reference |
+| `python tests/rtl_gemm_timing.py` | 7 min | Cycles per GEMM on the RTL for the decode and prefill patterns, with each unit's busy / wait / starved cycles; outputs checked against the simulator |
 | `python tests/run_gpt2.py` | 2 min | GPT-2 small on real text, after `make`. `--prompt` generates text |
 
 ## Results (2026-11-05)
@@ -77,7 +78,7 @@ Compile time is 8 s; a pass takes about 21 s in the simulator with the race chec
 | Run | Result |
 |---|---|
 | Tiny GPT, context 64, simulator (`test_decode`) | Prompt of 5, then decode at positions 5 … 63 through buckets 16, 32, 64: every logit matches the reference; no races, rule violations or uninitialized reads; also in random execution orders and with P·V split over two weight halves |
-| Tiny GPT, RTL (`rtl_decode`) | 2 prefills (149 k cycles) and 5 decode steps (40.5 k to 47.1 k cycles): 0 DDR bytes differ from the simulator, 0 logits from the reference |
+| Tiny GPT, RTL (`rtl_decode`) | 2 prefills (142.6 k cycles) and 5 decode steps (32.9 k to 39.6 k cycles; 40.5 k to 47.1 k before the matrix-unit overlap of 2026-11-09): 0 DDR bytes differ from the simulator, 0 logits from the reference |
 | GPT-2, simulator (`make check`) | Prompt of 8, decode at positions 8 and 9: 0 of 150,816 logits differ; no races |
 | GPT-2, C replay (`generate -c`) | The same through `generate.c`: 0 logits differ. A greedy request returns the reference's most likely token |
 

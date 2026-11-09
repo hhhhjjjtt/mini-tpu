@@ -15,7 +15,7 @@
 
 #include "mini_tpu_hw.h"
 
-#define FW_ARCH         MINI_TPU_ARCH_WORD(MINI_TPU_TILE_N, 0x0F, MINI_TPU_VMEM_KB)    // built for this config
+#define FW_ARCH         MINI_TPU_ARCH_WORD(MINI_TPU_TILE_N, MINI_TPU_UNITS_MASK, MINI_TPU_VMEM_KB)    // built for this config
 #define W(off)          ((off) >> 2)    // byte offset -> word index in a descriptor / header
 
 typedef struct {

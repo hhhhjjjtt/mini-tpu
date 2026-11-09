@@ -12,8 +12,9 @@
 //                   R <region> <hex address>      set REGION_BASE
 //                   P <hex address> 0             run the program at this address
 //
-// Prints "RESULT <addr> <status> <cycles> <descriptors>" per program, then writes
-// <dir>/ddr_out.hex. The DUT and the AXI-Lite master match tb_system.
+// Prints "RESULT <addr> <status> <cycles> <descriptors>" and "PERF <addr>" followed by
+// busy, wait and starved cycles of LOAD, MATRIX, VECTOR and STORE per program, then
+// writes <dir>/ddr_out.hex. The DUT and the AXI-Lite master match tb_system.
 // =============================================================================
 
 module tb_blob;
@@ -143,6 +144,8 @@ module tb_blob;
     localparam [15:0] R_CORE_CTRL = 16'h010, R_DOORBELL = 16'h014, R_STATUS = 16'h018,
                       R_PROG_LO = 16'h020, R_PROG_HI = 16'h024, R_REGION = 16'h100,
                       R_FW_VERSION = 16'h200, R_CYCLES = 16'h300, R_DESC_COUNT = 16'h340,
+                      R_PERF = 16'h310,                 // UNIT_BUSY, then UNIT_WAIT and UNIT_STARVED 16 B on
+
                       W_IMEM = 16'h8000;
 
     reg [31:0] fw [0:4095];
@@ -164,6 +167,21 @@ module tb_blob;
         end
     endtask
 
+    // +trace: one line per event of the units, for timing analysis
+    //   P<u> push to unit u   A<u> unit u takes a command   D<u> unit u done
+    //   S core starts a tile  F core finishes a tile   R matrix running 0/1
+    reg tracing = 0;
+    initial tracing = $test$plusargs("trace");
+    always @(posedge clk) if (tracing) begin
+        for (int u = 0; u < 4; u++) begin
+            if (u_top.push[u])                         $display("T %0d P%0d", u_ddr.cyc, u);
+            if (u_top.f_valid[u] && u_top.f_ready[u])  $display("T %0d A%0d", u_ddr.cyc, u);
+            if (u_top.unit_done[u])                    $display("T %0d D%0d", u_ddr.cyc, u);
+        end
+        if (u_top.u_mat.c_start)  $display("T %0d S", u_ddr.cyc);
+        if (u_top.u_mat.core_fin) $display("T %0d F", u_ddr.cyc);
+    end
+
     task automatic run_prog(input [31:0] pb);
         reg [31:0] st, cycles, dc;
         begin
@@ -177,6 +195,13 @@ module tb_blob;
             axil_read(R_CYCLES, cycles);
             axil_read(R_DESC_COUNT, dc);
             $display("RESULT %h %h %0d %0d", pb, st, cycles, dc);
+            $write("PERF %h", pb);                          // busy, wait, starved per unit
+            for (int u = 0; u < 4; u++) begin
+                axil_read(R_PERF + 4 * u, cycles);  $write(" %0d", cycles);
+                axil_read(R_PERF + 16 + 4 * u, cycles);  $write(" %0d", cycles);
+                axil_read(R_PERF + 32 + 4 * u, cycles);  $write(" %0d", cycles);
+            end
+            $write("\n");
         end
     endtask
 

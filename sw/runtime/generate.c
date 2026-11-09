@@ -478,6 +478,7 @@ static int check(gen_t *g, int last_pos)
         if (!per[b].runs) continue;
         printf("    decode_%-4d %4d tokens: %6.1f ms, %6.2f M cycles, %6" PRIu64 " descriptors per token\n", m->bucket[b], per[b].runs,
                per[b].ms / per[b].runs, per[b].cycles / per[b].runs / 1e6, per[b].descs);
+        if (per[b].cycles == 0) continue;               // no cycle counter (simulator)
         printf("               ");
         for (unsigned u = 0; u < MINI_TPU_NUM_UNITS; u++)
             printf(" %s busy %4.1f %% wait %4.1f %%%s", unit[u], 100 * per[b].busy[u] / per[b].cycles,

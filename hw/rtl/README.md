@@ -30,7 +30,7 @@ Related folders under `hw/` (software is in [`../../sw/`](../../sw/)):
 
 | Folder | Status | Contents |
 |---|---|---|
-| `common/` | Reusable | BRAM, AXI4 read master (copied); `unit_frontend.sv`, `sfifo.sv` (new) |
+| `common/` | Reusable | AXI4 read master (copied); `dual_port_ram.v`, `unit_frontend.sv`, `sfifo.sv` (new) |
 | `matrix_unit/` | New + adapted | Matrix unit (`matrix_unit.sv`, `act_transposer.sv`) around the systolic array (`systolic_array.sv`) |
 | `vector_unit/` | New | Vector unit, its `2^-z` ROM and the ROM generator script |
 | `scalar_unit/` | New + vendored | Scalar unit: `scalar_unit.sv` (PicoRV32 + memories + mailbox + host registers), `issue_engine.sv` (new); `picorv32.v` (vendored) |
@@ -44,8 +44,6 @@ Related folders under `hw/` (software is in [`../../sw/`](../../sw/)):
 | File | Copied from | Use here |
 |---|---|---|
 | `matrix_unit/systolic_array.sv` | `src/systolic_streaming/compute_tile_bram.sv` | The systolic array. Renamed on 2026-11-09 and edited here from then on; until then it was a frozen, byte-identical copy. The slower `int_pingpong` core (13.9 % of peak in this adapter) was removed on 2026-11-08 |
-| `common/bram.v` | `fpga/dma/bram.v` | `bram_sdp_64` primitive (1-cycle sync read, active-high reset) |
-| `common/bram_extendable.sv` | `fpga/dma/bram_extendable.sv` | Width/depth-parameterized BRAM |
 | `common/queue_axi4_master_r.sv` | branch `origin/rung4-counters-v1` (`cd045ba`), `fpga/streaming/` | AXI4 burst read master; the scalar unit's fetch DMA |
 | `scalar_unit/picorv32.v`, `scalar_unit/PICORV32_LICENSE` | [YosysHQ/picorv32](https://github.com/YosysHQ/picorv32) commit `ef203c2b0a3fb793280f5114941416c425c5b461`, ISC license | RV32I control core, unmodified |
 

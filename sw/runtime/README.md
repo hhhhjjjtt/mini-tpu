@@ -106,16 +106,20 @@ It starts `build/generate` through `sudo` and talks to it in token ids, one requ
 
 Prefill unit activity: VECTOR busy 100 %, MATRIX busy 78.9 % (waiting 44.1 %), LOAD busy 8.7 %, STORE busy 2.2 %. The vector unit is the bottleneck.
 
-`make decode` (8-token prompt, then decode to position 1023): **PASSED, 16 positions checked, 0 logits differ**, every bucket.
+`make decode` (8-token prompt, then decode to position 1023): **PASSED, 16 positions checked, 0 logits differ**, every bucket. Bitstream of 2026-11-09 (the matrix unit overlaps one-tile GEMMs: two pending GEMMs, three weight halves; `HW_ARCH 0x08001f10`), against the first one of 2026-11-08:
 
-| Bucket | Positions | ms per token | M cycles | Descriptors | Tokens/s |
+| Bucket | Positions | ms per token | M cycles | Tokens/s | Before: ms, tokens/s |
 |---|---|---|---|---|---|
-| 16 – 128 | 8 … 127 | 192 – 200 | 19.1 – 19.9 | 59,787 – 62,823 | 5.0 – 5.2 |
-| 256 | 128 … 255 | 209 | 20.8 | 66,292 | 4.8 |
-| 512 | 256 … 511 | 227 | 22.7 | 73,232 | 4.4 |
-| 1024 | 512 … 1023 | 266 | 26.6 | 88,845 | 3.8 |
+| 16 – 128 | 8 … 127 | 123 – 130 | 12.3 – 13.0 | **7.7 – 8.1** | 192 – 200, 5.0 – 5.2 |
+| 256 | 128 … 255 | 139 | 13.9 | 7.2 | 209, 4.8 |
+| 512 | 256 … 511 | 158 | 15.7 | 6.3 | 227, 4.4 |
+| 1024 | 512 … 1023 | 197 | 19.6 | 5.1 | 266, 3.8 |
 
-Unit activity (buckets 16 – 64): MATRIX busy 98.7 %, its next command waiting 89 %; VECTOR busy 99.9 % (each GEMM's epilogue runs with it); LOAD busy 46 %, waiting 97 % for a free weight half; STORE 0.1 %. The GEMMs bound decode: about 19,700 one-tile GEMMs per token at about 970 cycles each, twice their weight-streaming time. Not dispatch (144 cycles per descriptor) and not the weight DMA (7.8 M cycles).
+Prefill (S = 128): 1,010 ms, 100.5 M cycles (was 1,034 ms).
 
-`make chat`: "Hello" → "Hello: How much I'm getting into this game, what kind of problems do I have?", 18 tokens, prompt 1,039 ms, 192 ms per token (5.2 tokens/s).
+Unit activity, buckets 16 – 64: MATRIX busy 98.7 %; VECTOR busy 99.8 % (each GEMM's epilogue runs with it); LOAD busy 72 % (was 46 %): the weight DMA is now close to its limit; STORE 0.1 %. About 19,700 one-tile GEMMs per token at about 630 cycles each (was about 970). Longer contexts add attention work: LOAD busy falls to 52 % at 1024.
+
+Before, the GEMMs cost about twice their weight-streaming time: each waited for the previous GEMM's rows to reach VECTOR, and weight loads and activation fills serialized over two weight halves (`hw/sim/README.md`, "Decode").
+
+`make chat`: "I work in a lab called HPLP" → "I work in a lab called HPLP, which is funded by the US Department of Health and Human Services.", 14 tokens, prompt 1,010 ms, 124 ms per token (8.1 tokens/s). The first bitstream gave 192 ms per token.
 

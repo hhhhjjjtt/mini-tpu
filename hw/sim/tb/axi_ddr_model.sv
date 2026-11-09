@@ -9,7 +9,8 @@
 //
 //   * Up to 16 outstanding bursts per port; in-order responses (single ID).
 //   * Each burst becomes ready LAT_MIN .. LAT_MAX cycles after its AR / last W.
-//   * Random AR / R / AW / W / B stalls.
+//   * Random AR / R / AW / W / B stalls, off with the plusarg +nostall (for
+//     timing measurements closer to the KV260's DDR rate).
 //   * Addresses >= ERR_BASE answer SLVERR (reads return 0, writes are dropped).
 //   * Protocol checks: 16 B beats, INCR, no 4 KB crossing, WLAST on the right
 //     beat, valid held until ready with a stable payload. Violations print
@@ -60,6 +61,8 @@ module axi_ddr_model #(
     reg [127:0] mem [0:WORDS-1];
     integer violations = 0;
     reg [63:0] cyc = 0;
+    reg nostall = 0;
+    initial nostall = $test$plusargs("nostall");
     always @(posedge clk) cyc <= cyc + 1;
 
     function automatic bit burst_ok(input [AW-1:0] a, input [7:0] len, input [2:0] size, input [1:0] burst);
@@ -90,8 +93,8 @@ module axi_ddr_model #(
             wire          err = (q_addr[rp] >= ERR_BASE);
 
             always @(negedge clk) begin
-                ar_go <= ($urandom % 4) != 0;
-                r_go  <= ($urandom % 5) != 0;
+                ar_go <= nostall || ($urandom % 4) != 0;
+                r_go  <= nostall || ($urandom % 5) != 0;
             end
 
             assign arready[g]           = ar_go && (cnt < 16);
@@ -153,9 +156,9 @@ module axi_ddr_model #(
             wire [AW-1:0] wa = q_addr[rp] + {beat, 4'd0};
 
             always @(negedge clk) begin
-                aw_go <= ($urandom % 4) != 0;
-                w_go  <= ($urandom % 5) != 0;
-                b_go  <= ($urandom % 3) != 0;
+                aw_go <= nostall || ($urandom % 4) != 0;
+                w_go  <= nostall || ($urandom % 5) != 0;
+                b_go  <= nostall || ($urandom % 3) != 0;
             end
 
             // W accepted only for bursts whose AW has arrived (legal slave behavior)

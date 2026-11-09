@@ -149,8 +149,8 @@ def epilogue_case(img):
     pitch = 64 if i32_out else 16
     koff = 0
     for c, k in enumerate(ks):
-        half = c & 1
-        d.append(isa.wait(isa.load_wgt(0, img.put(0, i8(rng, k, 16)), half, k), MATRIX, 1))
+        half = c % 3                                       # three weight halves: a load runs two GEMMs ahead
+        d.append(isa.wait(isa.load_wgt(0, img.put(0, i8(rng, k, 16)), half, k), MATRIX, 2))
         d.append(isa.wait(isa.gemm(va + koff, ktot, m_tiles, k, half), LOAD, 0))
         last = c == chunks - 1
         if variant == 0:
@@ -316,10 +316,10 @@ def read_ddr_out():
     return np.frombuffer(bytes.fromhex("".join(rows)), dtype=np.uint8).reshape(-1, 16)[:, ::-1].ravel()
 
 
-def run_rtl():
+def run_rtl(plusargs=""):
     rel = WORK.relative_to(SIM_DIR).as_posix()
     t = time.time()
-    r = subprocess.run(["make", "-s", "sim_blob", f"BLOB={rel}"], cwd=SIM_DIR, capture_output=True, text=True)
+    r = subprocess.run(["make", "-s", "sim_blob", f"BLOB={rel}", f"PLUSARGS={plusargs}"], cwd=SIM_DIR, capture_output=True, text=True)
     out = r.stdout + r.stderr
     (WORK / "sim.log").write_text(out)
     if "TB DONE" not in out:

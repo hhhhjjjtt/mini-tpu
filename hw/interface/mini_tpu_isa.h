@@ -13,6 +13,10 @@
 #define MINI_TPU_UNIT_VECTOR    2u              // VEC_*
 #define MINI_TPU_UNIT_STORE     3u              // STORE
 #define MINI_TPU_NUM_UNITS      4u
+// units byte of the arch word (§3.1, §7.1): the four units, and bit 4 = three weight halves
+// (wgt_half 0 .. 2). The firmware refuses a program that needs a bit the hardware lacks.
+#define MINI_TPU_UNITS_MASK     0x1Fu
+#define MINI_TPU_WGT_HALVES     3u
 #define MINI_TPU_UNIT_FW        0xFFu           // ERR_UNIT for firmware-detected errors
 
 // ---- DDR regions (§2.2) ----

@@ -101,7 +101,9 @@ set_property target_language Verilog [current_project]
 
 add_files -norecurse $srcs
 add_files -norecurse $top_src
-# module references need the include file in the project, not only an include dir
+# module references need the include file in the project, not only an include dir. The
+# module-reference parser also seems to look for it only next to plain Verilog (.v) sources:
+# with only .sv files in rtl/common it fails to open it, so keep a .v file there (dual_port_ram.v).
 set cfg_hdr [file join $rtl_dir common mini_tpu_config.svh]
 add_files -norecurse $cfg_hdr
 set_property file_type {Verilog Header} [get_files $cfg_hdr]

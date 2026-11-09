@@ -30,7 +30,7 @@ int mtpu_open(mtpu_dev_t *d, uint64_t ctrl_phys, uint64_t min_buf_bytes)
     d->buf = calloc(1, min_buf_bytes);
     d->buf_phys = BUF_PHYS;
     *(uint32_t *)(ctrl + MINI_TPU_R_HW_ID) = MINI_TPU_HW_ID;
-    *(uint32_t *)(ctrl + MINI_TPU_R_HW_ARCH) = MINI_TPU_ARCH_WORD(MINI_TPU_TILE_N, 0x0F, MINI_TPU_VMEM_KB);
+    *(uint32_t *)(ctrl + MINI_TPU_R_HW_ARCH) = MINI_TPU_ARCH_WORD(MINI_TPU_TILE_N, MINI_TPU_UNITS_MASK, MINI_TPU_VMEM_KB);
     return d->buf ? 0 : -1;
 }
 

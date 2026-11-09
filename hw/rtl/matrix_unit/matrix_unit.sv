@@ -33,12 +33,20 @@
 // start tile t+1 while the streamer drains tile t. Halves alternate per tile
 // over the whole command stream (f_hp / c_hp / s_hp), not per command.
 //
-// Cross-GEMM prefill: once the filler has finished the current GEMM, the next
-// GEMM is accepted into a pending slot and the filler starts on its first
-// tiles while the current GEMM's last tiles compute and stream. The front end
-// only offers a command whose wait conditions hold, so a GEMM that reads the
-// current GEMM's results (it waits on VECTOR) is not prefilled early.
+// Cross-GEMM prefill: up to two GEMMs wait behind the running one, in pending
+// slots P and Q. Once the filler has finished the newest GEMM, the next one is
+// accepted and the filler starts on its first tiles. Once the core has
+// finished the running GEMM's tiles it moves on to P (c_on_p) while the
+// streamer still hands the running GEMM's last rows to VECTOR. When that last
+// row is taken the running GEMM is done, P becomes the running one and Q
+// moves to P. With one-tile GEMMs (decode) the filler, the core and the
+// streamer each work on a different GEMM, so none of them waits. The front end only
+// offers a command whose wait conditions hold, so a GEMM that reads the
+// current GEMM's results (it waits on VECTOR) is not accepted early.
 // LOAD_WGT_VM and bad commands are taken only when the unit is idle.
+//
+// Weight buffer: three halves (wgt_half 0 .. 2) of K_MAX rows, so a LOAD_WGT
+// can fill one while the GEMMs before it read the other two.
 //
 // The array keeps FlexNPU's core handshake (see systolic_array.sv). act/wgt
 // buf_ready are held high while a resident half is in use (allowed by §5).
@@ -91,7 +99,7 @@ module matrix_unit #(
     // ---- Weight buffer write port (from LOAD unit, LOAD_WGT; has priority) ----
     // one 16-byte word per write; addr = row * T/16 + word within the row
     input  wire                 wgt_wr_en,
-    input  wire                 wgt_wr_half,
+    input  wire [1:0]           wgt_wr_half,
     input  wire [$clog2(K_MAX*T/16)-1:0] wgt_wr_addr,
     input  wire [127:0]         wgt_wr_data,
 
@@ -113,7 +121,8 @@ module matrix_unit #(
     localparam integer Q       = T / N;            // core runs per tile side
     localparam integer PASSES  = Q * Q;
     localparam integer PB      = (PASSES <= 1) ? 1 : $clog2(PASSES);
-    localparam integer BUF_D   = (2 * K_MAX < 512) ? 512 : 2 * K_MAX;  // bram_extendable minimum
+    localparam integer BUF_D   = 2 * K_MAX;        // staging: two halves of K_MAX rows
+    localparam integer WGT_D   = 3 * K_MAX;        // weights: three halves of K_MAX rows
 
     localparam [7:0] OP_GEMM       = 8'h10;
     localparam [7:0] OP_LOAD_WGT_VM = 8'h11;
@@ -141,15 +150,15 @@ module matrix_unit #(
     wire [15:0] c_act_pitch= cmd[224 +: 16];   // 0x1C
     wire [15:0] c_m_tiles  = cmd[240 +: 16];   // 0x1E
     wire [15:0] c_k        = cmd[256 +: 16];   // 0x20
-    wire        c_wgt_half = cmd[272];         // 0x22
+    wire [1:0]  c_wgt_half = cmd[272 +: 2];    // 0x22
     wire [7:0]  c_half_byte= cmd[272 +: 8];    // 0x22
 
-    wire c_bad_field = (c_k == 0) || (c_k[3:0] != 0) || (c_k > K_MAX) ||
+    wire c_bad_field = (c_k == 0) || (c_k[3:0] != 0) || (c_k > K_MAX) || (c_half_byte > 8'd2) ||
                        (c_m_tiles == 0) || (c_act_addr[3:0] != 0) ||
                        (c_act_pitch[3:0] != 0) || (c_act_addr[31:VM_AW+4] != 0);
 
     // LOAD_WGT_VM: same field offsets as GEMM (src 0x18, pitch 0x1C, k 0x20, half 0x22)
-    wire c_wl_bad = (c_k == 0) || (c_k[3:0] != 0) || (c_k > K_MAX) || (c_half_byte > 8'd1) ||
+    wire c_wl_bad = (c_k == 0) || (c_k[3:0] != 0) || (c_k > K_MAX) || (c_half_byte > 8'd2) ||
                     (c_act_addr[3:0] != 0) || (c_act_pitch[3:0] != 0) ||
                     (c_act_addr[31:VM_AW+4] != 0);
 
@@ -157,17 +166,18 @@ module matrix_unit #(
     reg [VM_AW-1:0]  pitch_w;
     reg [15:0]       m_tiles;
     reg [15:0]       k;
-    reg              wgt_half;
-    reg              wl, wl_trans, wl_half;     // LOAD_WGT_VM in progress
+    reg [1:0]        wgt_half;
+    reg              wl, wl_trans;              // LOAD_WGT_VM in progress
+    reg [1:0]        wl_half;
     reg [KA:0]       w_cnt;                     // weight rows written
     reg [FW-1:0]     s_iss, s_rcv;              // straight mode: reads issued / returned
     reg [VM_AW-1:0]  s_addr;
     reg [LW-1:0]     s_hold;                    // straight mode: the row so far
 
-    // pending GEMM (accepted early; its tiles may already be filling)
-    reg              p_valid;
-    reg [15:0]       p_k, p_mt;
-    reg              p_half;
+    // pending GEMMs, oldest first (accepted early; their tiles may already be filling)
+    reg              p_valid, q_valid;
+    reg [15:0]       p_k, p_mt, q_k, q_mt;
+    reg [1:0]        p_half, q_half;
 
     // filler's command (the running GEMM's, or the pending one's once accepted)
     reg [15:0]       f_k, f_mt;
@@ -259,6 +269,12 @@ module matrix_unit #(
     reg         c_running;
     reg [15:0]  c_tile;
     reg         c_half;
+    reg         c_on_p;                         // the core is on the pending GEMM
+
+    // the GEMM the core works on: the running one, or the pending one once c_on_p
+    wire [15:0] cr_mt   = c_on_p ? p_mt   : m_tiles;
+    wire [15:0] cr_k    = c_on_p ? p_k    : k;
+    wire [1:0]  cr_half = c_on_p ? p_half : wgt_half;
 
     wire core_busy, core_done, core_tile_done;
     wire [$clog2(CORE_MAX_K)-1:0] core_act_addr, core_wgt_addr;
@@ -281,7 +297,7 @@ module matrix_unit #(
     wire [N*8-1:0] core_wgt_dout = wgt_dout[c_cp*N*8 +: N*8];
     wire [RW-1:0]  core_out_row  = c_rp * N + core_out_addr;
 
-    wire c_start = running && !wl && !c_running && (c_tile < m_tiles) &&
+    wire c_start = running && !wl && !c_running && (c_tile < cr_mt) &&
                    (stg_state[c_hp] == H_FILLED) && !out_full[c_hp];
 
     // ------------------------------------------------------------
@@ -302,8 +318,8 @@ module matrix_unit #(
     // Accept rules
     // ------------------------------------------------------------
     // idle: any command (bad ones are rejected with an error)
-    // early: the next GEMM, once the filler is done with the running one
-    wire early_ok  = running && !wl && !p_valid && f_done && !last_row_w &&
+    // early: the next GEMM into P, or into Q behind P, once the filler is done with the newest
+    wire early_ok  = running && !wl && !q_valid && f_done && !last_row_w &&
                      (c_opcode == OP_GEMM) && !c_bad_field;
     assign cmd_ready = !running || early_ok;
     assign busy      = running;
@@ -311,7 +327,9 @@ module matrix_unit #(
     wire acc_gemm  = cmd_valid && cmd_ready && (c_opcode == OP_GEMM) && !c_bad_field;
     wire acc_wl    = cmd_valid && !running && (c_opcode == OP_LOAD_WGT_VM) && !c_wl_bad;
     wire acc_load  = acc_gemm || acc_wl;             // filler takes the new command's fields
-    wire exec_new  = (acc_gemm && !running) || (last_row_w && p_valid);   // core/streamer restart
+    wire exec_new  = (acc_gemm && !running) || (last_row_w && p_valid);   // streamer restart
+    // the core has finished the running GEMM's tiles: on to the pending one
+    wire c_switch  = running && !wl && p_valid && !c_on_p && !c_running && (c_tile == m_tiles) && !last_row_w;
 
     // ------------------------------------------------------------
     // Command accept / completion
@@ -325,22 +343,33 @@ module matrix_unit #(
             pitch_w    <= 0;
             m_tiles    <= 0;
             k          <= 0;
-            wgt_half   <= 1'b0;
+            wgt_half   <= 2'd0;
             wl         <= 1'b0;
             wl_trans   <= 1'b0;
-            wl_half    <= 1'b0;
+            wl_half    <= 2'd0;
             p_valid    <= 1'b0;
             p_k        <= 0;
             p_mt       <= 0;
-            p_half     <= 1'b0;
+            p_half     <= 2'd0;
+            q_valid    <= 1'b0;
+            q_k        <= 0;
+            q_mt       <= 0;
+            q_half     <= 2'd0;
         end else begin
             unit_done <= 1'b0;
             if (early_ok && cmd_valid) begin
-                // next GEMM into the pending slot; the filler starts on it now
-                p_valid <= 1'b1;
-                p_k     <= c_k;
-                p_mt    <= c_m_tiles;
-                p_half  <= c_wgt_half;
+                // next GEMM into the first free pending slot; the filler starts on it now
+                if (!p_valid) begin
+                    p_valid <= 1'b1;
+                    p_k     <= c_k;
+                    p_mt    <= c_m_tiles;
+                    p_half  <= c_wgt_half;
+                end else begin
+                    q_valid <= 1'b1;
+                    q_k     <= c_k;
+                    q_mt    <= c_m_tiles;
+                    q_half  <= c_wgt_half;
+                end
             end
             if (!running && cmd_valid) begin
                 if (c_opcode == OP_GEMM) begin
@@ -374,11 +403,17 @@ module matrix_unit #(
                 end
             end else if (running && !wl && last_row_w) begin
                 unit_done <= 1'b1;
-                if (p_valid) begin                  // pending GEMM becomes the running one
-                    p_valid  <= 1'b0;
+                if (p_valid) begin                  // P becomes the running one, Q moves to P
                     m_tiles  <= p_mt;
                     k        <= p_k;
                     wgt_half <= p_half;
+                    if (q_valid) begin
+                        p_k     <= q_k;
+                        p_mt    <= q_mt;
+                        p_half  <= q_half;
+                        q_valid <= 1'b0;
+                    end else
+                        p_valid <= 1'b0;
                 end else
                     running  <= 1'b0;
             end else if (running && wl && w_cnt == k) begin
@@ -499,21 +534,30 @@ module matrix_unit #(
     // ------------------------------------------------------------
     // Core runner
     // ------------------------------------------------------------
+    // At exec_new the core is idle unless it is already on the pending GEMM, which then
+    // becomes the running one with its tile count unchanged.
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             c_running <= 1'b0;
             c_tile    <= 0;
             c_half    <= 1'b0;
             c_hp      <= 1'b0;
-        end else if (exec_new) begin
-            c_tile    <= 0;                         // the core is idle at a command boundary
-        end else if (c_start) begin
-            c_running <= 1'b1;
-            c_half    <= c_hp;
-            c_hp      <= ~c_hp;
-        end else if (core_fin) begin
-            c_running <= 1'b0;
-            c_tile    <= c_tile + 1'b1;
+            c_on_p    <= 1'b0;
+        end else begin
+            if (c_switch || (exec_new && !c_on_p))
+                c_tile <= 0;
+            else if (core_fin)
+                c_tile <= c_tile + 1'b1;
+            if (c_start) begin
+                c_running <= 1'b1;
+                c_half    <= c_hp;
+                c_hp      <= ~c_hp;
+            end else if (core_fin)
+                c_running <= 1'b0;
+            if (c_switch)
+                c_on_p <= 1'b1;
+            else if (exec_new)
+                c_on_p <= 1'b0;
         end
     end
 
@@ -558,13 +602,13 @@ module matrix_unit #(
     end
 
     // ------------------------------------------------------------
-    // Act staging (2 halves x K_MAX x T bytes) and weight buffer
+    // Act staging (2 halves x K_MAX x T bytes) and weight buffer (3 halves)
     // ------------------------------------------------------------
     // a LOAD_WGT write is one word of a row, a LOAD_WGT_VM write a whole row
     wire [KA-1:0]   wgt_wr_row = wgt_wr_addr >> WPB;
     wire [LW/8-1:0] wgt_wr_sel = {16{1'b1}} << (16 * (wgt_wr_addr & (WPR - 1)));
 
-    bram_extendable #(.DATA_WIDTH(LW), .DEPTH(BUF_D)) u_stage (
+    dual_port_ram #(.W(LW), .DEPTH(BUF_D)) u_stage (
         .clk     (clk),
         .rst     (!rst_n),
         .wr_en   (tp_take && !wl),
@@ -576,7 +620,7 @@ module matrix_unit #(
         .rd_dout (stg_dout)
     );
 
-    bram_extendable #(.DATA_WIDTH(LW), .DEPTH(BUF_D)) u_wgt (
+    dual_port_ram #(.W(LW), .DEPTH(WGT_D)) u_wgt (
         .clk     (clk),
         .rst     (!rst_n),
         .wr_en   (wgt_wr_en || wl_wr),
@@ -584,7 +628,7 @@ module matrix_unit #(
         .wr_addr (wgt_wr_en ? {wgt_wr_half, wgt_wr_row} : {wl_half, w_cnt[KA-1:0]}),
         .wr_din  (wgt_wr_en ? {WPR{wgt_wr_data}} : wq_dout),
         .rd_en   (core_wgt_en),
-        .rd_addr ({wgt_half, core_wgt_addr[KA-1:0]}),
+        .rd_addr ({cr_half, core_wgt_addr[KA-1:0]}),
         .rd_dout (wgt_dout)
     );
 
@@ -603,7 +647,7 @@ module matrix_unit #(
         .clk             (clk),
         .rst_n           (rst_n),
         .start           (c_start || c_again),
-        .K_total         (k[$clog2(CORE_MAX_K+1)-1:0]),
+        .K_total         (cr_k[$clog2(CORE_MAX_K+1)-1:0]),
         .i_accumulate_in (1'b0),
         .i_writeback_en  (1'b1),
         .busy            (core_busy),

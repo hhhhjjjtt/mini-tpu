@@ -10,6 +10,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
+UNITS_MASK = 0x1F           # MINI_TPU_UNITS_MASK: four units, bit 4 = three weight halves
 
 
 def _pow2(v):
@@ -66,7 +67,7 @@ class Hardware:
 
     @property
     def arch_word(self):
-        return self.tile_n | 0x0F << 8 | self.vmem_kb << 16
+        return self.tile_n | UNITS_MASK << 8 | self.vmem_kb << 16
 
     @property
     def hash(self):

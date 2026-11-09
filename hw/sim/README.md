@@ -7,7 +7,7 @@ cd hw/sim
 make sim_matrix                    # matrix unit against a reference GEMM
 make sim_vector                    # vmem + matrix + vector end to end
 make sim_system                    # mini_tpu_top + firmware + DDR model (builds ../fw first)
-make sim_blob BLOB=<dir>           # run a compiled program, dump DDR (tb/tb_blob.sv)
+make sim_blob BLOB=<dir>           # run compiled programs, dump DDR and unit counters (tb/tb_blob.sv); PLUSARGS=+nostall turns off the DDR model's random stalls
 make sim_matrix_timing             # per-tile cycle breakdown of the matrix unit (timing only)
 make sim_all                       # matrix, vector and system TBs
 ```
@@ -58,7 +58,7 @@ DMA bandwidth (P6): LOAD and STORE each 12.8 B/cycle, the full beat rate the DDR
 
 ## Matrix unit per-tile timing
 
-`make sim_matrix_timing` runs `tb_matrix_timing` (scenarios S1 one GEMM, S2 two back-to-back GEMMs, S3 short k) with ideal surroundings (vmem grants every request, data one cycle later; VECTOR always ready), so every lost cycle belongs to the matrix unit or its systolic array. It explains why `tput` on the KV260 reaches 80 % of peak while the matrix unit is busy.
+`make sim_matrix_timing` runs `tb_matrix_timing` (scenarios S1 one GEMM, S2 two back-to-back GEMMs, S3 short k, S4 six one-tile GEMMs as decode issues them) with ideal surroundings (vmem grants every request, data one cycle later; VECTOR always ready), so every lost cycle belongs to the matrix unit or its systolic array. It explains why `tput` on the KV260 reaches 80 % of peak while the matrix unit is busy.
 
 **Cycles:**
 
@@ -76,6 +76,22 @@ DMA bandwidth (P6): LOAD and STORE each 12.8 B/cycle, the full beat rate the DDR
 With cross-GEMM prefill (INTERFACE_SPEC §10.5) the matrix unit accepts the next `GEMM` as soon as its filler is done with the current one and fills the next command's first tiles while the current GEMM's last tiles compute, so only the first GEMM of a run pays the fill. S2 (two back-to-back GEMMs): 5,354 cycles instead of 5,902; what remains at the switch is 17 cycles (the next GEMM's first tile starts after the previous GEMM's last tile has streamed).
 
 **This accounts for `tput`** (4 GEMMs × 16 M-tiles, k = 512): before prefill, 64 × 597 + 4 × (546 + 17) + handoffs ≈ 40.5 k of the 40,932 busy cycles measured on the board, overhead split roughly read bubbles 24 %, drain 27 %, writeback 13 %, per-GEMM fill 27 %, the rest 9 %. With prefill only the first fill remains: simulated MATRIX busy 39,297 cycles (213.5 MAC/cycle, 83 % of peak).
+
+**Decode** (one M-tile per GEMM). Measured on the whole system by `sw/compiler/tests/rtl_gemm_timing.py`: the steady-state interval between GEMM completions, DDR model without random stalls (2026-11-09).
+
+| k = 512, one M-tile | Before | After | |
+|---|---|---|---|
+| `LOAD_WGT` before every GEMM, as decode does | ~940 | **626** | |
+| Weights already loaded | ~780 | **598** | One tile's compute: the core never waits |
+| k = 256, `LOAD_WGT` before every GEMM | ~550 | **342** | |
+
+What changed in `matrix_unit.sv`:
+
+- **The core no longer waits for the hand-over to VECTOR.** A GEMM completes only when VECTOR has taken its last row, and the epilogue takes one row at a time (about 11 to 16 cycles: take, a 6-cycle calculation, the write). The core used to start the next GEMM only then. Now it starts the next GEMM's tiles as soon as it has finished the current GEMM's, while the streamer is still handing over rows.
+- **Two pending GEMMs instead of one.** With one, the next GEMM was accepted only when the GEMM two back had completed, so its fill (k + 34 cycles) ran late and the core waited about 146 cycles every other GEMM. With two, the filler, the core and the streamer each work on a different GEMM.
+- **Three weight halves.** With two, a `LOAD_WGT` waited for the GEMM before the current one and the next GEMM waited for that `LOAD_WGT`, so weight loads and fills serialized (about 160 cycles per GEMM).
+
+Within a GEMM of several M-tiles the hand-over to VECTOR overlaps the next tile, so prefill paid it once per GEMM and gains little: P8 (`tput`) went from 213.5 to 215.7 MAC/cycle while MATRIX is busy.
 
 What can be changed:
 

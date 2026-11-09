@@ -28,7 +28,7 @@ UNIT_OF = {C.OP_LOAD: 0, C.OP_LOAD_WGT: 0, C.OP_STORE: 3, C.OP_GEMM: 1, C.OP_LOA
 MEM_OPS = (C.OP_LOAD, C.OP_LOAD_WGT, C.OP_STORE)
 
 
-def arch_word(n=C.TILE_N, units=0x0F, vmem_kb=C.VMEM_KB):
+def arch_word(n=C.TILE_N, units=C.UNITS_MASK, vmem_kb=C.VMEM_KB):
     return n | units << 8 | vmem_kb << 16
 
 

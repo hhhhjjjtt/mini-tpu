@@ -105,7 +105,7 @@ PROG_BASE + first_chunk_offset : chunk 0 (≤ 256 descriptors)
 | 0x04 | u16 | format_version | `2` |
 | 0x06 | u16 | header_size | `64` |
 | 0x08 | u8 | arch_n | Array size N (16) |
-| 0x09 | u8 | units_mask | Required units (bit = unit ID); `0x0F` |
+| 0x09 | u8 | units_mask | Required units (bit = unit ID) and features: bit 4 = three weight halves (`wgt_half` 2). `0x1F` |
 | 0x0A | u16 | vmem_kb | Required vmem size (≤ hardware) |
 | 0x0C | u8 | regions_mask | Regions that must be set by the runtime |
 | 0x0D | u8[3] | reserved | |
@@ -203,9 +203,11 @@ Field checks (`LOAD`, `STORE`): `rows` ≥ 1; `row_bytes` a non-zero multiple of
 
 ### 5.3 `LOAD_WGT` — DDR → weight buffer half
 
+The weight buffer has three halves (the name is historical) of 512 rows, so a `LOAD_WGT` can fill one while the `GEMM`s before it read the other two.
+
 | Off | Type | Field |
 |---|---|---|
-| 0x18 | u8 | half (0 or 1) |
+| 0x18 | u8 | half (0, 1 or 2) |
 | 0x19 | u8[3] | reserved |
 | 0x1C | u16 | k (rows = K, multiple of 16, ≤ 512) |
 
@@ -219,7 +221,7 @@ Copies `16·k` contiguous bytes (one weight tile, §2.5) into the selected half.
 | 0x1C | u16 | act_pitch (bytes) |
 | 0x1E | u16 | m_tiles (number of 16-row tiles) |
 | 0x20 | u16 | k (multiple of 16, ≤ 512) |
-| 0x22 | u8 | wgt_half (0 or 1) |
+| 0x22 | u8 | wgt_half (0, 1 or 2) |
 | 0x23 | u8 | reserved |
 
 For each M-tile `t` in `0 … m_tiles−1`: computes `C[16×16] = A[rows 16t … 16t+15, 0 … k−1] · W[0 … k−1, 0 … 15]` (i8 × i8 → i32, wrap-around), and streams 16 output rows to VECTOR (§10.3). Done when the last row is accepted by VECTOR.
@@ -236,7 +238,7 @@ Fills a weight-buffer half from vmem instead of DDR, so GEMMs whose second opera
 | 0x1C | u16 | src_pitch (bytes, multiple of 16) |
 | 0x1E | u16 | reserved |
 | 0x20 | u16 | k (weight rows; multiple of 16, ≤ 512) |
-| 0x22 | u8 | wgt_half (0 or 1) |
+| 0x22 | u8 | wgt_half (0, 1 or 2) |
 
 Flags (0x01): bit 0 `TRANSPOSE`.
 
@@ -247,8 +249,8 @@ Flags (0x01): bit 0 `TRANSPOSE`.
 
 - Writes rows `0 … k−1` of the half; rows ≥ k keep old data, which the following `GEMM` with the same `k` never reads.
 - **Padding:** §2.5 requires weight rows `t ≥ K_real` to be zero. For vmem-sourced weights the compiler must make the contraction padding zero in the source (e.g. `V` rows ≥ seq_real, `K` columns ≥ head_dim_real), or zero in the activation operand of the next `GEMM`.
-- Runs between `GEMM`s (MATRIX is in order). A `LOAD_WGT` into the other half may run concurrently; its writes take priority on the weight-buffer port.
-- Done when the last row is written. Errors: `ERR_BAD_FIELD` for k, alignment, `wgt_half` > 1, address beyond vmem.
+- Runs between `GEMM`s (MATRIX is in order). A `LOAD_WGT` into another half may run concurrently; its writes take priority on the weight-buffer port.
+- Done when the last row is written. Errors: `ERR_BAD_FIELD` for k, alignment, `wgt_half` > 2, address beyond vmem.
 
 One attention head (`Q`: M × d, `K`, `V`: S × d, all in vmem), per 16-column output block `j0`:
 
@@ -478,7 +480,7 @@ Base address is assigned at build time (`assign_bd_address`) and recorded in the
 |---|---|---|---|
 | 0x000 | HW_ID | RO | `0x5550544D` ("MTPU") |
 | 0x004 | HW_VERSION | RO | `[15:0]` minor, `[31:16]` major |
-| 0x008 | HW_ARCH | RO | `[7:0]` N, `[15:8]` units_mask, `[31:16]` vmem_kb |
+| 0x008 | HW_ARCH | RO | `[7:0]` N, `[15:8]` units_mask (bit 4: three weight halves), `[31:16]` vmem_kb |
 | 0x010 | CORE_CTRL | RW | bit 0 `CORE_RESET` (1 = held in reset; **reset value 1**); bit 1 `IRQ_EN` |
 | 0x014 | DOORBELL | WO | 1 `RUN`, 2 `RESUME`, 3 `ABORT`; latched for firmware, self-clears when firmware reads it. `RUN` and `RESUME` set `STATUS = RUNNING` in hardware immediately, so a poll right after the write never sees the previous `DONE` / `BREAK`. `RUN` also resets the §7.4 counters. Write `RUN` only when `STATUS` is not `RUNNING` / `BREAK` |
 | 0x018 | STATUS | RO | `[3:0]` state: 0 IDLE, 1 RUNNING, 2 BREAK, 3 DONE, 4 ERROR; `[15:8]` error code (§11); `[31:16]` code (break_id or error detail) |
@@ -732,7 +734,7 @@ DONE[MATRIX]++ after last row accepted
 
 Staging and output halves alternate per tile across the whole command stream, not per command.
 
-**Cross-GEMM prefill.** Once the filler has filled every tile of the running `GEMM`, MATRIX accepts the next `GEMM` from its command FIFO (if it is offered, i.e. its wait conditions hold) and starts filling that command's tiles into the free staging halves while the running GEMM's last tiles compute and stream. The next GEMM's core work starts after the running GEMM's last row is accepted; its `DONE` still follows in order. This hides the first-tile fill (≈ k + 34 cycles) of every back-to-back `GEMM`. A `GEMM` whose activations are produced by the running GEMM's epilogue waits on VECTOR (§4.2), so it is not offered — and not prefilled — until that data is in vmem. `LOAD_WGT_VM` and malformed commands are taken only when MATRIX is idle.
+**Cross-GEMM prefill.** Up to two `GEMM`s wait behind the running one. Once the filler has filled every tile of the newest accepted `GEMM`, MATRIX accepts the next one from its command FIFO (if it is offered, i.e. its wait conditions hold) and starts filling its tiles into the free staging halves. Once the core has computed the running GEMM's last tile it starts on the next GEMM's tiles while the running GEMM's last rows are still being streamed to VECTOR. `DONE` follows in order, when a GEMM's last row is accepted. This hides the first-tile fill (≈ k + 34 cycles) and the stream hand-over of every back-to-back `GEMM`: one-tile `GEMM`s (decode) run at one tile's compute time, k + 85 cycles. A `GEMM` whose activations are produced by the running GEMM's epilogue waits on VECTOR (§4.2), so it is not offered — and not prefilled — until that data is in vmem. `LOAD_WGT_VM` and malformed commands are taken only when MATRIX is idle.
 
 ---
 

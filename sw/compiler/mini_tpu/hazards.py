@@ -20,7 +20,7 @@ WEIGHT_ROWS = C.MAX_K
 class Finding:
     kind: str           # RAW, WAR, WAW, UNINIT, RULE
     space: str          # vmem, weights, ddr, program
-    where: int          # byte address, half * 512 + row, or -1
+    where: int          # byte address, half * MAX_K + row, or -1
     earlier: tuple      # (unit, seq) or None
     later: tuple        # (unit, seq)
     note: str = ""
@@ -41,7 +41,7 @@ class Checker:
     def __init__(self, vmem_bytes, written):
         """written: bool per word, shared across programs because vmem keeps its contents."""
         self.nv = vmem_bytes >> 4
-        n = self.nv + 2 * WEIGHT_ROWS
+        n = self.nv + C.WGT_HALVES * WEIGHT_ROWS
         self.last_w = np.zeros((4, n), dtype=np.int32)      # seq of the newest writer, per unit
         self.last_r = np.zeros((4, n), dtype=np.int32)
         self.written = written
@@ -175,11 +175,11 @@ class Checker:
                 (self._read if write else self._write)(idx, start, me)
         elif op == C.OP_LOAD_WGT:
             self._ddr_access(cmd.addr, 1, 16 * f["k"], 0, start, me, False)
-            self._write(self._wrows(f["half"] & 1, min(f["k"], WEIGHT_ROWS)), start, me, "weights")
+            self._write(self._wrows(f["half"], min(f["k"], WEIGHT_ROWS)), start, me, "weights")
         elif op == C.OP_GEMM:
             k = min(f["k"], WEIGHT_ROWS)
             self._read(_words(f["act"], 16 * f["m_tiles"], f["k"], f["act_pitch"]), act, me)
-            self._read(self._wrows(f["half"] & 1, k), start, me, "weights")
+            self._read(self._wrows(f["half"], k), start, me, "weights")
             self.pending_gemm.append(end)
         elif op == C.OP_LOAD_WGT_VM:
             k = min(f["k"], WEIGHT_ROWS)
@@ -188,7 +188,7 @@ class Checker:
             else:
                 src = _words(f["src"], f["k"], 16, f["src_pitch"])
             self._read(src, start, me)
-            self._write(self._wrows(f["half"] & 1, k), start, me, "weights")
+            self._write(self._wrows(f["half"], k), start, me, "weights")
         elif op == C.OP_VEC_EPILOGUE:
             i32_out = f["mode"] in (C.EP_STORE_I32, C.EP_ACC_I32)
             if not i32_out:                                 # the i32 modes fetch the table but ignore it

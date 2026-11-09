@@ -42,7 +42,7 @@ class Emitter:
     def __init__(self, target):
         self.t = target
         self.nv = target.vmem_bytes >> 4
-        self.last_w = np.zeros((4, self.nv + 2 * target.max_k), dtype=np.int32)
+        self.last_w = np.zeros((4, self.nv + C.WGT_HALVES * target.max_k), dtype=np.int32)
         self.last_r = np.zeros_like(self.last_w)
         self.issued = [0, 0, 0, 0]
         self.gemms = []                     # MATRIX seq of each GEMM
@@ -117,14 +117,19 @@ class Emitter:
         vs = row_bytes if vmem_stride is None else vmem_stride
         return self.emit(isa.store(region, off, vmem, rows, row_bytes, ds, vs), reads=[words(vmem, rows, row_bytes, vs)])
 
+    def next_half(self):
+        """Weight halves in rotation, so a LOAD_WGT runs while the two GEMMs before it compute."""
+        self.half = (self.half + 1) % C.WGT_HALVES
+        return self.half
+
     def load_wgt(self, off, k):
         """Fills the next weight half. Returns it."""
-        self.half ^= 1
+        self.next_half()
         self.emit(isa.load_wgt(0, off, self.half, k), writes=[self._half_rows(self.half, k)])
         return self.half
 
     def load_wgt_vm(self, src, pitch, k, transpose):
-        self.half ^= 1
+        self.next_half()
         area = words(src, 16, k, pitch) if transpose else words(src, k, 16, pitch)
         self.emit(isa.load_wgt_vm(src, pitch, k, self.half, transpose), reads=[area], writes=[self._half_rows(self.half, k)])
         return self.half

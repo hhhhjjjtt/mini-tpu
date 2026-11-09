@@ -28,6 +28,8 @@
 //   S1  one GEMM, k = 512, 4 M-tiles
 //   S2  two back-to-back GEMMs, k = 512, 4 M-tiles each (gap between commands)
 //   S3  one GEMM, k = 64, 8 M-tiles (short K: fixed costs dominate)
+//   S4  six back-to-back GEMMs, k = 512, 1 M-tile each, alternating weight
+//       halves (decode: one row, a GEMM per 16 output columns)
 // =============================================================================
 
 module tb_matrix_timing;
@@ -67,7 +69,8 @@ module tb_matrix_timing;
     wire [VM_AW-1:0] rd_addr;
     reg [127:0]      vmem [0:VM_WORDS-1];
 
-    reg          wgt_wr_en = 0, wgt_wr_half = 0;
+    reg          wgt_wr_en = 0;
+    reg  [1:0]   wgt_wr_half = 0;
     reg  [8:0]   wgt_wr_addr = 0;
     reg  [127:0] wgt_wr_data = 0;
     wire         m_valid, m_last;
@@ -239,6 +242,12 @@ module tb_matrix_timing;
         push_gemm(0, 64, 8, 64, 0);
         wait_done(4);
         report("S3", 1, 8, 64);
+
+        $display("S4: six back-to-back GEMMs, k=512, 1 M-tile each (decode)");
+        clear_sums();
+        for (i = 0; i < 6; i = i + 1) push_gemm(0, 512, 1, 512, i & 1);
+        wait_done(10);
+        report("S4", 6, 1, 512);
 
         if (unit_err) $display("TB FAIL: unit error %h", unit_err_code);
         else          $display("TB DONE");

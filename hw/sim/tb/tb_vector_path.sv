@@ -91,7 +91,8 @@ module tb_vector_path;
     end
 
     // ---------------- matrix unit ----------------
-    reg          wgt_wr_en = 0, wgt_wr_half = 0;
+    reg          wgt_wr_en = 0;
+    reg  [1:0]   wgt_wr_half = 0;
     reg  [8:0]   wgt_wr_addr = 0;
     reg  [127:0] wgt_wr_data = 0;
     wire         s_valid, s_last, s_ready;

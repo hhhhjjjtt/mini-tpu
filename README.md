@@ -8,10 +8,10 @@ The hardware is a 16 × 16 systolic array, a 16-lane vector unit, 2 MB of on-chi
 
 | | Result |
 |---|---|
-| Prompt of 128 tokens (prefill) | 1.04 s, bit-exact against the simulator (6.4 M logits) |
-| New tokens (decode, KV cache in DDR) | 5.2 tokens/s up to 128 positions, 3.8 at 1024; bit-exact at every context size |
+| Prompt of 128 tokens (prefill) | 1.01 s, bit-exact against the simulator (6.4 M logits) |
+| New tokens (decode, KV cache in DDR) | 8.1 tokens/s up to 128 positions, 5.1 at 1024; bit-exact at every context size |
 | Quality (int8 vs float GPT-2, WikiText-2) | Perplexity 63.3 vs 53.3 at 128 tokens; top-1 agreement 72 % |
-| FPGA | Timing met (WNS +0.95 ns); 66 k LUT, 524 DSP, 64 URAM; 84 % of CLBs |
+| FPGA | Timing met (WNS +0.335 ns); 61 k LUT in the accelerator, 524 DSP, 64 URAM |
 
 Details and what limits each number: [sw/runtime/README.md](sw/runtime/README.md), [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md).
 

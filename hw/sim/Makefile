@@ -55,11 +55,11 @@ sim_system: fw
 		tb/tb_system.sv tb/axi_ddr_model.sv $(SRCS) $(TOP_SRC)
 	$(VVP) -n $(BUILD)/tb_system.out
 
-# run a program blob and dump DDR: make sim_blob BLOB=<dir> (see tb/tb_blob.sv)
+# run a program blob and dump DDR: make sim_blob BLOB=<dir> [PLUSARGS=+nostall] (see tb/tb_blob.sv)
 sim_blob: fw
 	@mkdir -p $(BUILD)
 	$(IVERILOG) -g2012 -I$(RTL_DIR)/common -s tb_blob -o $(BUILD)/tb_blob.out 		tb/tb_blob.sv tb/axi_ddr_model.sv $(SRCS) $(TOP_SRC)
-	$(VVP) -n $(BUILD)/tb_blob.out +blob=$(BLOB)
+	$(VVP) -n $(BUILD)/tb_blob.out +blob=$(BLOB) $(PLUSARGS)
 
 sim_all:
 	$(MAKE) sim_matrix

@@ -1,8 +1,7 @@
 # Source manifests for mini-tpu RTL (paths relative to hw/rtl/).
 
 COMMON_SRCS := \
-	common/bram.v \
-	common/bram_extendable.sv \
+	common/dual_port_ram.v \
 	common/unit_frontend.sv \
 	common/queue_axi4_master_r.sv \
 	common/sfifo.sv

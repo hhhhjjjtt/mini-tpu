@@ -45,7 +45,7 @@ class Machine:
         self.ddr = np.zeros(ddr_bytes, dtype=np.uint8)
         self.ddr_base = ddr_base
         self.vmem = np.zeros(vmem_bytes, dtype=np.uint8)
-        self.weights = np.zeros((2, C.MAX_K, 16), dtype=np.int8)
+        self.weights = np.zeros((C.WGT_HALVES, C.MAX_K, 16), dtype=np.int8)
         self.region = [0] * C.NUM_REGIONS
         self.magic = magic
         self.hw_arch = arch_word(vmem_kb=vmem_bytes >> 10) if hw_arch is None else hw_arch
@@ -53,7 +53,7 @@ class Machine:
         self.rng = random.Random(order_seed) if order_seed is not None else None
         self.on_desc, self.on_break = on_desc, on_break
         self.checker = None
-        self.valid = np.zeros((vmem_bytes >> 4) + 2 * C.MAX_K, dtype=bool)  # words written so far
+        self.valid = np.zeros((vmem_bytes >> 4) + C.WGT_HALVES * C.MAX_K, dtype=bool)  # words written so far
         self.reset_status()
 
     def reset_status(self):
@@ -317,7 +317,7 @@ class Machine:
     def _load_wgt(self, cmd):
         f = cmd.f
         k = f["k"]
-        if k == 0 or k & 15 or k > C.MAX_K or f["half"] > 1 or cmd.addr & 15:
+        if k == 0 or k & 15 or k > C.MAX_K or f["half"] >= C.WGT_HALVES or cmd.addr & 15:
             raise UnitError(0, C.ERR_BAD_FIELD)
         self.weights[f["half"], :k] = self._ddr_view(cmd.addr, k, 16, 16).view(np.int8)
 
@@ -328,13 +328,14 @@ class Machine:
 
     def _check_gemm(self, f):
         k = f["k"]
-        if k == 0 or k & 15 or k > C.MAX_K or f["m_tiles"] == 0 or f["act_pitch"] & 15 or not self._addr_ok(f["act"]):
+        if (k == 0 or k & 15 or k > C.MAX_K or f["m_tiles"] == 0 or f["half"] >= C.WGT_HALVES or f["act_pitch"] & 15
+                or not self._addr_ok(f["act"])):
             raise UnitError(1, C.ERR_BAD_FIELD)
 
     def _load_wgt_vm(self, cmd):
         f = cmd.f
         k = f["k"]
-        if k == 0 or k & 15 or k > C.MAX_K or f["half"] > 1 or f["src_pitch"] & 15 or not self._addr_ok(f["src"]):
+        if k == 0 or k & 15 or k > C.MAX_K or f["half"] >= C.WGT_HALVES or f["src_pitch"] & 15 or not self._addr_ok(f["src"]):
             raise UnitError(1, C.ERR_BAD_FIELD)
         if f["flags"] & C.WV_F_TRANSPOSE:
             self.weights[f["half"], :k] = self._vm_i8(f["src"], 16, k, f["src_pitch"], 1).T

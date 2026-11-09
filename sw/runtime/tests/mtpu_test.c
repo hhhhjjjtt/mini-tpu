@@ -38,7 +38,7 @@
 #endif
 #endif
 
-#define HW_ARCH_EXPECT  MINI_TPU_ARCH_WORD(MINI_TPU_TILE_N, 0x0F, MINI_TPU_VMEM_KB)
+#define HW_ARCH_EXPECT  MINI_TPU_ARCH_WORD(MINI_TPU_TILE_N, MINI_TPU_UNITS_MASK, MINI_TPU_VMEM_KB)
 #define N               ((int)MINI_TPU_WEIGHT_TILE_N)       // array width = lanes per weight tile
 #define RUN_TIMEOUT_US  3000000u
 

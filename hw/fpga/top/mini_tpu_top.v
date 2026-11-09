@@ -186,7 +186,8 @@ module mini_tpu_top #(
     // =========================================================================
     // Units. LOAD / STORE keep the global reset and drain on CORE_RESET (abort).
     // =========================================================================
-    wire         wgt_wr_en, wgt_wr_half;
+    wire         wgt_wr_en;
+    wire [1:0]   wgt_wr_half;
     wire [`MTPU_WGT_AW-1:0] wgt_wr_addr;
     wire [127:0] wgt_wr_data;
     wire         s_valid, s_last, s_ready;

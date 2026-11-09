@@ -11,6 +11,6 @@
 `define MTPU_MAX_LEN       1024
 `define MTPU_FIFO_DEPTH    8
 `define MTPU_FREE_W        4
-`define MTPU_HW_ARCH       32'h08000F10
+`define MTPU_HW_ARCH       32'h08001F10
 
 `endif

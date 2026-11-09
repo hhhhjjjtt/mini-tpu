@@ -72,7 +72,7 @@ module load_unit #(
 
     // ---- Weight buffer write port (matrix unit) ----
     output reg                      wgt_wr_en,
-    output reg                      wgt_wr_half,
+    output reg  [1:0]               wgt_wr_half,
     output reg  [$clog2(K_MAX*N/16)-1:0] wgt_wr_addr,
     output reg  [127:0]             wgt_wr_data
 );
@@ -90,7 +90,8 @@ module load_unit #(
     assign busy      = (state != S_IDLE);
 
     // ---- latched command ----
-    reg         is_wgt, half;
+    reg         is_wgt;
+    reg [1:0]   half;
     reg [7:0]   op_q, half_byte;
     reg [63:0]  ddr;
     reg [31:0]  vaddr, dstride, vstride;
@@ -100,7 +101,7 @@ module load_unit #(
     wire [47:0] vm_last  = {16'd0, vaddr} + (rows - 1'b1) * {16'd0, vstride} + {32'd0, row_bytes};
     wire load_bad = (rows == 0) || (row_bytes == 0) || (row_bytes[3:0] != 0) || (row_bytes > 16'd4096) ||
                     (ddr[3:0] != 0) || (dstride[3:0] != 0) || (vaddr[3:0] != 0) || (vstride[3:0] != 0);
-    wire wgt_bad  = (kk == 0) || (kk[3:0] != 0) || (kk > K_MAX) || (half_byte > 8'd1) || (ddr[3:0] != 0);
+    wire wgt_bad  = (kk == 0) || (kk[3:0] != 0) || (kk > K_MAX) || (half_byte > 8'd2) || (ddr[3:0] != 0);
 
     // ---- AR side ----
     reg                       gen_start;
@@ -160,7 +161,7 @@ module load_unit #(
             vaddr <= 0; dstride <= 0; vstride <= 0; rows <= 0; row_bytes <= 0; kk <= 0;
             gen_start <= 1'b0; out_cnt <= 0; axi_err <= 1'b0; ar_wait <= 1'b0;
             wr_row_base <= 0; wr_off <= 0; wr_rows_left <= 0; wgt_idx <= 0;
-            wgt_wr_en <= 1'b0; wgt_wr_half <= 1'b0; wgt_wr_addr <= 0; wgt_wr_data <= 0;
+            wgt_wr_en <= 1'b0; wgt_wr_half <= 2'd0; wgt_wr_addr <= 0; wgt_wr_data <= 0;
         end else begin
             unit_done <= 1'b0;
             gen_start <= 1'b0;
@@ -182,7 +183,7 @@ module load_unit #(
                     ddr       <= cmd[128 +: 64];
                     vaddr     <= cmd[192 +: 32];
                     half_byte <= cmd[192 +: 8];
-                    half      <= cmd[192];
+                    half      <= cmd[192 +: 2];
                     kk        <= cmd[224 +: 16];
                     dstride   <= cmd[256 +: 32];
                     vstride   <= cmd[288 +: 32];

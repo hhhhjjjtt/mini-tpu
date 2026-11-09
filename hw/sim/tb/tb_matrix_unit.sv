@@ -65,7 +65,8 @@ module tb_matrix_unit;
     integer      q_head = 0, q_tail = 0, cyc = 0;
 
     // ---------------- weight buffer write ----------------
-    reg          wgt_wr_en = 0, wgt_wr_half = 0;
+    reg          wgt_wr_en = 0;
+    reg  [1:0]   wgt_wr_half = 0;
     reg  [8:0]   wgt_wr_addr = 0;
     reg  [127:0] wgt_wr_data = 0;
 
@@ -111,7 +112,7 @@ module tb_matrix_unit;
 
     // ---------------- golden model storage ----------------
     reg signed [7:0]  A [0:MAXM-1][0:MAXK-1];
-    reg signed [7:0]  Wt [0:1][0:MAXK-1][0:N-1];
+    reg signed [7:0]  Wt [0:2][0:MAXK-1][0:N-1];
 
     integer errors = 0;
     integer rows_checked = 0;
@@ -210,7 +211,7 @@ module tb_matrix_unit;
             push_cmd[224 +: 16]  = pitch_b;
             push_cmd[240 +: 16]  = m_tiles;
             push_cmd[256 +: 16]  = kk;
-            push_cmd[272]        = h;
+            push_cmd[272 +: 8]   = h;
             exp_m_tiles[n_cmds]  = m_tiles;
             exp_k[n_cmds]        = kk;
             exp_half[n_cmds]     = h;
@@ -361,11 +362,24 @@ module tb_matrix_unit;
         push_gemm(9216*16, 64, 1, 64, 0, 4'b0000, 0);
         wait_cmds_done(11, 40000);
 
+        // T9: decode pattern: back-to-back one-tile GEMMs over all three weight halves,
+        //     each with its own k; the core moves on to the next GEMM while the
+        //     previous one's rows are still being taken
+        fill_A(16, 64, 10240, 64);
+        load_W(2, 64);
+        load_W(1, 32);
+        load_W(0, 48);
+        push_gemm(10240*16, 64, 1, 64, 2, 4'b0000, 0);
+        push_gemm(10240*16, 64, 1, 32, 1, 4'b0000, 0);
+        push_gemm(10240*16, 64, 1, 48, 0, 4'b0000, 0);
+        push_gemm(10240*16, 64, 1, 64, 2, 4'b0000, 0);
+        wait_cmds_done(15, 60000);
+
         // T6: bad field (k not multiple of 16) -> ERR_BAD_FIELD, no DONE
         push_gemm(0, 16, 1, 20, 0, 4'b0000, 0);
         n_cmds = n_cmds - 1;
         repeat (20) @(negedge clk);
-        if (!unit_err || unit_err_code != 8'h11 || my_done != 11) begin
+        if (!unit_err || unit_err_code != 8'h11 || my_done != 15) begin
             $display("FAIL: bad-field command not rejected (err=%0b code=%h done=%0d)",
                      unit_err, unit_err_code, my_done);
             errors = errors + 1;
@@ -376,8 +390,8 @@ module tb_matrix_unit;
             $display("FAIL: frontend overflow");
             errors = errors + 1;
         end
-        if (rows_checked != (1 + 3 + 2 + 5 + 1 + 1 + 2 + 1 + 1) * 16) begin
-            $display("FAIL: rows checked %0d, expected %0d", rows_checked, 17 * 16);
+        if (rows_checked != (1 + 3 + 2 + 5 + 1 + 1 + 2 + 1 + 1 + 4) * 16) begin
+            $display("FAIL: rows checked %0d, expected %0d", rows_checked, 21 * 16);
             errors = errors + 1;
         end
 

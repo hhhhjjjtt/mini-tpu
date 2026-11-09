@@ -935,7 +935,7 @@ module tb_system;
 
         // ---- identity, I-mem load, boot ----
         axil_read(R_HW_ID, v);   expect32(v, 32'h5550_544D, "HW_ID");
-        axil_read(R_HW_ARCH, v); expect32(v, 32'h0800_0F10, "HW_ARCH");
+        axil_read(R_HW_ARCH, v); expect32(v, `MTPU_HW_ARCH, "HW_ARCH");
         axil_read(R_CORE_CTRL, v); expect32(v, 32'h1, "CORE_CTRL reset value");
         for (int i = 0; i < 4096; i++) axil_write(W_IMEM + 4 * i, fw[i]);
         axil_read(W_IMEM + 4 * 17, v); expect32(v, fw[17], "I-mem readback");

@@ -25,7 +25,7 @@ foreach f $srcs {
 }
 read_xdc -mode out_of_context $xdc
 
-set inc [file dirname [lsearch -inline $srcs *bram.v]]
+set inc [file dirname [lsearch -inline $srcs */common/*]]
 synth_design -top mini_tpu_top -part $part -mode out_of_context -flatten_hierarchy rebuilt -include_dirs $inc
 write_checkpoint -force [file join $out_dir post_synth.dcp]
 report_utilization -file [file join $out_dir util_synth.rpt]
